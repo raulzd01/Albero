@@ -585,7 +585,10 @@ const CATALOGO = [
   { id:"3a-sev-1",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 1", equipos:16, asc:1, pro:3, des:2 },
   { id:"3a-sev-2",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 2", equipos:16, asc:1, pro:3, des:2 },
   { id:"3a-sev-3",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 3", equipos:16, asc:1, pro:3, des:2 },
-  { id:"3a-sev-6",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 6", equipos:16, asc:1, pro:3, des:2 }
+  { id:"3a-sev-4",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 4", equipos:16, asc:1, pro:3, des:2 },
+  { id:"3a-sev-5",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 5", equipos:16, asc:1, pro:3, des:2 },
+  { id:"3a-sev-6",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 6", equipos:16, asc:1, pro:3, des:2 },
+  { id:"4a-sev-1",  provincia:"Sevilla",   categoria:"Cuarta Andaluza",            grupo:"Grupo 1", equipos:16, asc:1, pro:4, des:0 }
 ];
 
 /* --- Generador de datos de muestra, con semilla para que sea estable --- */
@@ -1180,6 +1183,7 @@ function refrescarGrp(){
   const p=$("#selProv").value, c=$("#selCat").value;
   const gs = CATALOGO.filter(x=>x.provincia===p && x.categoria===c);
   $("#selGrp").innerHTML = gs.map(g=>`<option value="${g.id}">${g.grupo}</option>`).join("");
+  if(!REAL && gs.some(g=>g.id==="3a-sev-5")) $("#selGrp").value = "3a-sev-5";
   cargar($("#selGrp").value);
 }
 $("#selProv").addEventListener("change",refrescarCat);

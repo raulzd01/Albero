@@ -171,7 +171,7 @@ td.eq{text-align:left;font-family:var(--body);font-weight:600;font-size:.83rem;c
         <div class="row row-3">
           <div class="f"><label for="cProv">Provincia</label><input id="cProv" value="Sevilla"></div>
           <div class="f"><label for="cCat">Categoría</label><input id="cCat" value="Tercera Andaluza"></div>
-          <div class="f"><label for="cGrp">Grupo</label><input id="cGrp" value="Grupo 6"></div>
+          <div class="f"><label for="cGrp">Grupo</label><input id="cGrp" value="Grupo 5"></div>
         </div>
         <div class="row row-3">
           <div class="f"><label for="cAsc">Plazas de ascenso</label><input id="cAsc" type="number" min="0" max="6" value="1"></div>
@@ -720,9 +720,9 @@ $$(".nav button").forEach(b=>b.addEventListener("click",()=>{
 
 /* ---------- Ejemplo para probar sin escribir nada ---------- */
 $("#bDemo").addEventListener("click",()=>{
-  $("#cEquipos").value = ["C.D. Carrión","Rival 2","Rival 3","Rival 4","Rival 5","Rival 6","Rival 7","Rival 8","Rival 9","Rival 10","Rival 11","Rival 12","Rival 13","Rival 14","Rival 15","Rival 16"].join("\n");
+  $("#cEquipos").value = ["Camino Viejo C.F.", "U.D. Santiponce", "Villanueva Atlético", "J.D. Bormujos", "Mures C.F.", "Huévar C.F.", "C.D. Almensilla", "Umbrete C.F.", "Coria C.F. B", "C.D. Salteras", "Atlético Libertad", "C.D. Albaida", "U.D. Mairena del Aljarafe", "Nueva Sevilla", "C.D. Carrión"].join("\n");
   $("#cInicio").value = "2026-09-06";
-  $("#mComp").dataset.s=""; $("#mComp").textContent="Plantilla cargada con el C.D. Carrión. Cambia los rivales por los reales de tu grupo y genera el calendario.";
+  $("#mComp").dataset.s=""; $("#mComp").textContent="Cargado el Grupo 5 de la temporada pasada (15 equipos). Corrige la lista con la composición nueva cuando la publique la RFAF.";
 });
 
 /* Primera jornada por defecto: el domingo que viene */

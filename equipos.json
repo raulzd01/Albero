@@ -1,4 +1,74 @@
 {
+  "Camino Viejo C.F.": {
+    "localidad": "",
+    "campo": "",
+    "web": ""
+  },
+  "U.D. Santiponce": {
+    "localidad": "Santiponce",
+    "campo": "",
+    "web": ""
+  },
+  "Villanueva Atlético": {
+    "localidad": "",
+    "campo": "",
+    "web": ""
+  },
+  "J.D. Bormujos": {
+    "localidad": "Bormujos",
+    "campo": "",
+    "web": ""
+  },
+  "Mures C.F.": {
+    "localidad": "",
+    "campo": "",
+    "web": ""
+  },
+  "Huévar C.F.": {
+    "localidad": "Huévar del Aljarafe",
+    "campo": "",
+    "web": ""
+  },
+  "C.D. Almensilla": {
+    "localidad": "Almensilla",
+    "campo": "",
+    "web": ""
+  },
+  "Umbrete C.F.": {
+    "localidad": "Umbrete",
+    "campo": "",
+    "web": ""
+  },
+  "Coria C.F. B": {
+    "localidad": "Coria del Río",
+    "campo": "",
+    "web": ""
+  },
+  "C.D. Salteras": {
+    "localidad": "Salteras",
+    "campo": "",
+    "web": ""
+  },
+  "Atlético Libertad": {
+    "localidad": "",
+    "campo": "",
+    "web": ""
+  },
+  "C.D. Albaida": {
+    "localidad": "Albaida del Aljarafe",
+    "campo": "",
+    "web": ""
+  },
+  "U.D. Mairena del Aljarafe": {
+    "localidad": "Mairena del Aljarafe",
+    "campo": "",
+    "web": ""
+  },
+  "Nueva Sevilla": {
+    "localidad": "",
+    "campo": "",
+    "web": ""
+  },
   "C.D. Carrión": {
     "escudo": "escudos/carrion.png",
     "localidad": "Carrión de los Céspedes",
@@ -9,11 +79,5 @@
       "#D4A02A"
     ],
     "web": ""
-  },
-  "_ejemplo · borra esta entrada": {
-    "escudo": "escudos/nombre-del-club.png",
-    "localidad": "Localidad",
-    "campo": "Nombre del campo",
-    "web": "https://..."
   }
 }
