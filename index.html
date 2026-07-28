@@ -98,7 +98,19 @@ h4{font-size:.95rem;letter-spacing:.05em}
 .main{padding:2.2rem 0 4rem}
 .grid{display:grid;grid-template-columns:1.6fr 1fr;gap:1.4rem;align-items:start}
 .grid>*{min-width:0}
-@media(max-width:1020px){.grid{grid-template-columns:1fr}}
+@media(max-width:1020px){
+  .grid{grid-template-columns:1fr}
+  /* Las dos columnas desaparecen y los paneles pasan a ser hijos del grid,
+     para poder reordenarlos: interesa más el resultado de la última jornada
+     que el calendario entero. */
+  .grid>div{display:contents}
+  .grid>div>.panel+.panel{margin-top:0}
+  #clasificacion{order:1}
+  #jornada{order:2}
+  #calendario{order:3}
+  #goleadores{order:4}
+  #proxima{order:5}
+}
 .panel{background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .panel+.panel{margin-top:1.4rem}
 .panel__hd{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.85rem 1rem;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -165,6 +177,18 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
 .fix__row:last-child{border-bottom:0}
 .fix__row p{margin:0;font-size:.8rem;font-weight:600}
 .fix__row small{font-family:var(--data);font-size:.62rem;color:var(--mute);white-space:nowrap}
+
+/* Equipo destacado y filtrado */
+tbody tr.mio .c-team{box-shadow:inset 3px 0 0 var(--neon)}
+tbody tr.mio td{background:rgba(183,255,58,.06)}
+tbody tr.mio .teamcell{color:var(--neon)}
+tbody tr.oculto{display:none}
+.filtro{display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;border-bottom:1px solid var(--line);background:rgba(183,255,58,.05);flex-wrap:wrap}
+.filtro span{font-family:var(--data);font-size:.64rem;letter-spacing:.08em;color:var(--neon)}
+.filtro button{margin-left:auto;background:none;border:1px solid var(--line);border-radius:var(--r);color:var(--mute);font-family:var(--data);font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;padding:.25rem .55rem}
+.filtro button:hover{border-color:var(--neon);color:var(--neon)}
+.cal__j{font-family:var(--data);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--albero)}
+.escudo{width:20px;height:23px;flex:none;object-fit:contain}
 
 /* Calendario completo */
 .jnav{display:flex;align-items:center;gap:.3rem}
@@ -306,6 +330,8 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
     <span class="sel"><select id="selCat"></select></span>
     <label class="sr" for="selGrp">Grupo</label>
     <span class="sel"><select id="selGrp"></select></span>
+    <label class="sr" for="selEq">Filtrar por equipo</label>
+    <span class="sel"><select id="selEq" aria-label="Filtrar por equipo"></select></span>
     <span class="stamp"><i class="dot"></i><span id="stamp">—</span></span>
   </div>
 </div>
@@ -354,6 +380,23 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
           <span>Toca un equipo para ver su ficha</span>
         </div>
       </section>
+
+      <section class="panel reveal" id="calendario">
+      <div class="panel__hd">
+        <h3>Calendario completo</h3>
+        <div class="jnav" id="jnav">
+          <button id="jPrev" aria-label="Jornada anterior">‹</button>
+          <span class="sel"><select id="jSel" aria-label="Elegir jornada"></select></span>
+          <button id="jNext" aria-label="Jornada siguiente">›</button>
+        </div>
+      </div>
+      <div class="cal" id="calBody"></div>
+      <div class="legend">
+        <span><b>Sellado</b> cotejado con el acta</span>
+        <span><b>Sin confirmar</b> lo ha enviado un solo club</span>
+        <span>El botón de compartir genera una imagen para WhatsApp</span>
+      </div>
+    </section>
     </div>
 
     <!-- ---------- COLUMNA DERECHA ---------- -->
@@ -371,32 +414,13 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
         <div class="rank" id="glBody"></div>
       </section>
 
-      <section class="panel reveal">
+      <section class="panel reveal" id="proxima">
         <div class="panel__hd"><h3>Próxima jornada</h3><span class="meta" id="nxMeta">—</span></div>
         <div class="fix" id="nxBody"></div>
       </section>
     </div>
   </div>
 
-  <!-- ---------- CALENDARIO COMPLETO ---------- -->
-  <div class="wrap" style="margin-top:1.4rem">
-    <section class="panel reveal" id="calendario">
-      <div class="panel__hd">
-        <h3>Calendario completo</h3>
-        <div class="jnav">
-          <button id="jPrev" aria-label="Jornada anterior">‹</button>
-          <span class="sel"><select id="jSel" aria-label="Elegir jornada"></select></span>
-          <button id="jNext" aria-label="Jornada siguiente">›</button>
-        </div>
-      </div>
-      <div class="cal" id="calBody"></div>
-      <div class="legend">
-        <span><b>Sellado</b> cotejado con el acta</span>
-        <span><b>Sin confirmar</b> lo ha enviado un solo club</span>
-        <span>El botón de compartir genera una imagen para WhatsApp</span>
-      </div>
-    </section>
-  </div>
 </main>
 
 <!-- ================= CÓMO SE ACTUALIZA ================= -->
@@ -533,6 +557,20 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
    Los datos de aquí son de muestra y los nombres son inventados.
    ============================================================================ */
 
+/* Club de la casa: se resalta en la tabla y sale preseleccionado en el filtro. */
+const MI_CLUB = "C.D. Carrión";
+
+/* Registro de equipos: escudo, localidad y campo. Se carga de equipos.json si
+   existe; lo que no esté ahí usa un escudo generado con las iniciales. */
+let EQUIPOS = {};
+
+async function cargarEquipos(){
+  try{
+    const r = await fetch("equipos.json",{cache:"no-store"});
+    if(r.ok) EQUIPOS = await r.json() || {};
+  }catch(e){ EQUIPOS = {}; }
+}
+
 /* Rellena esto con tus datos reales antes de publicar.
    whatsapp: prefijo del país sin el signo +, por ejemplo "34600112233".
    Si lo dejas vacío, el formulario usa el correo. */
@@ -652,9 +690,43 @@ async function cargarCompeticion(id){
 const $  = (s,c=document)=>c.querySelector(s);
 const $$ = (s,c=document)=>[...c.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const escudo = n => `<svg viewBox="0 0 20 23" aria-hidden="true"><path d="M10 1l8.4 3V13.5c0 4.7-3.8 8-8.4 9-4.6-1-8.4-4.3-8.4-9V4z" fill="#16281F" stroke="#3A5347" stroke-width="1.2"/><text x="10" y="15" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7.5" font-weight="600" fill="#8DA396">${esc(n.trim()[0])}</text></svg>`;
+/* Color estable por nombre: el mismo equipo siempre sale del mismo tono, sin
+   tener que configurar nada. */
+function tono(n){
+  let h=0; for(const c of n) h=(h*31+c.charCodeAt(0))%360;
+  return h;
+}
+function iniciales(n){
+  /* Quita los puntos sin dejar hueco ("C.D." -> "CD"), tira las siglas y los
+     artículos, y se queda con las dos primeras letras útiles del nombre. */
+  const fuera = /^(CD|CF|UD|AD|FC|SAD|SD|CP|EF|AC|CDM|BALOMPIE|CLUB|ATLETICO|ATCO|DEPORTIVO|UNION|REAL|DE|DEL|LA|EL|LOS|LAS|Y)$/i;
+  const p = n.replace(/\./g,"").replace(/[^\p{L}\p{N} ]/gu," ").split(/\s+/)
+             .filter(w=>w && !fuera.test(w));
+  if(!p.length) return n.replace(/[^\p{L}\p{N}]/gu,"").slice(0,2).toUpperCase() || "?";
+  const ini = p.length>1 ? p[0][0]+p[1][0] : p[0].slice(0,2);
+  return ini.toUpperCase();
+}
+
+function escudoSvg(n,w=20,h=23){
+  const t = tono(n), mio = n===MI_CLUB;
+  const borde = mio ? "#B7FF3A" : `hsl(${t} 22% 34%)`;
+  const relleno = mio ? "rgba(183,255,58,.10)" : `hsl(${t} 26% 15%)`;
+  const texto = mio ? "#B7FF3A" : `hsl(${t} 30% 62%)`;
+  return `<svg class="escudo" viewBox="0 0 20 23" width="${w}" height="${h}" role="img" aria-label="${esc(n)}">
+    <path d="M10 1l8.4 3V13.5c0 4.7-3.8 8-8.4 9-4.6-1-8.4-4.3-8.4-9V4z" fill="${relleno}" stroke="${borde}" stroke-width="1.2"/>
+    <text x="10" y="15" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" font-weight="600" fill="${texto}">${esc(iniciales(n))}</text></svg>`;
+}
+/* Si el registro tiene imagen, se usa; si falla la descarga, cae al generado. */
+function escudo(n,w=20,h=23){
+  const src = EQUIPOS[n]?.escudo;
+  if(!src) return escudoSvg(n,w,h);
+  return `<img class="escudo" src="${esc(src)}" alt="${esc(n)}" width="${w}" height="${h}" loading="lazy"
+    onerror="this.outerHTML=window.__escudoSvg(${JSON.stringify(n)},${w},${h})">`;
+}
 const hace = min => min<60 ? `hace ${min} min` : min<1440 ? `hace ${Math.floor(min/60)} h` : `hace ${Math.floor(min/1440)} d`;
 const fmt = (iso,o)=>new Intl.DateTimeFormat("es-ES",o).format(new Date(iso));
+
+window.__escudoSvg = escudoSvg;
 
 /* Clasificación derivada de los partidos. Los puntos NUNCA se guardan en
    ningún sitio: se calculan aquí. Así la tabla no puede contradecir al
@@ -686,16 +758,21 @@ function pintarCabecera(){
   $("#hdEyebrow").textContent = `${c.provincia} · Temporada 2026/27`;
   $("#hdTitle").innerHTML = `${esc(c.categoria)} <em>${esc(c.grupo)}</em>`;
   $("#hdMeta").innerHTML = `
-    <span class="chip chip--live">Jornada ${D.jornada} en curso</span>
+    ${D.jugadas ? `<span class="chip chip--live">Jornada ${D.jornada} en curso</span>`
+                : `<span class="chip">La liga aún no ha empezado</span>`}
     <span class="chip">${c.equipos} equipos</span>
-    <span class="chip">${D.jugadas} jornadas jugadas</span>`;
+    <span class="chip">${D.jugadas} de ${D.totalJornadas} jornadas jugadas</span>`;
 
+  const n = D.resultados.length;
   const goles = D.resultados.reduce((a,m)=>a+(m.gl??0)+(m.gv??0),0);
   const conf = D.resultados.filter(m=>m.estado==="confirmado"||m.estado==="acta").length;
-  $("#kpis").innerHTML = `
+  $("#kpis").innerHTML = n ? `
     <div class="kpi"><b class="num">${goles}</b><small>Goles jornada</small></div>
-    <div class="kpi"><b class="num">${conf}/${D.resultados.length}</b><small>Confirmados</small></div>
-    <div class="kpi"><b class="num">${(goles/D.resultados.length).toFixed(1)}</b><small>Media gol/partido</small></div>`;
+    <div class="kpi"><b class="num">${conf}/${n}</b><small>Confirmados</small></div>
+    <div class="kpi"><b class="num">${(goles/n).toFixed(1)}</b><small>Media gol/partido</small></div>` : `
+    <div class="kpi"><b class="num">${D.totalJornadas}</b><small>Jornadas</small></div>
+    <div class="kpi"><b class="num">${D.partidos.length}</b><small>Partidos</small></div>
+    <div class="kpi"><b class="num">—</b><small>Sin jugar aún</small></div>`;
 
   const sello = `Actualizado ${hace(14)}`;
   $("#stamp").textContent = sello;
@@ -709,7 +786,8 @@ function pintarTabla(){
   $("#tbBody").innerHTML = rows.map((f,i)=>{
     const p=i+1;
     const cls = p<=c.asc ? "pos--asc" : p<=c.pro ? "pos--pro" : p>n-c.des ? "pos--des" : "";
-    return `<tr>
+    const marcado = f.nombre===MI_CLUB || f.nombre===FILTRO;
+    return `<tr class="${marcado?"mio":""}">
       <td class="c-pos"><span class="pos ${cls}">${p}</span></td>
       <td class="c-team"><span class="teamcell">${escudo(f.nombre)}<button type="button" data-team="${esc(f.nombre)}">${esc(f.nombre)}</button></span></td>
       <td class="c-pts">${f.pt}</td><td>${f.pj}</td><td>${f.pg}</td><td>${f.pe}</td><td>${f.pp}</td>
@@ -727,6 +805,14 @@ const ETIQUETA = {
 };
 
 function pintarJornada(){
+  if(!D.jugadas || !D.resultados.length){
+    $("#jrTitle").textContent = "Última jornada";
+    $("#jrMeta").textContent = "sin resultados";
+    $("#jrBody").innerHTML = `<div style="padding:1.6rem 1rem;text-align:center;color:var(--mute)">
+      <b style="font-family:var(--display);text-transform:uppercase;letter-spacing:.03em">Todavía no se ha jugado nada</b>
+      <p style="margin:.35rem 0 0;font-size:.85rem">El calendario ya está publicado. Los resultados aparecerán aquí desde la primera jornada.</p></div>`;
+    return;
+  }
   $("#jrTitle").textContent = `Jornada ${D.jugadas}`;
   $("#jrMeta").textContent = `${D.resultados.length} partidos`;
   $("#jrBody").innerHTML = D.resultados.map(m=>{
@@ -762,6 +848,20 @@ function pintarProxima(){
     </div>`).join("");
 }
 
+/* ---------- Filtro por equipo ---------- */
+let FILTRO = "";   /* "" = todos los equipos */
+
+function pintarSelectorEquipos(){
+  const eqs = tabla(D).map(f=>f.nombre).sort((a,b)=>a.localeCompare(b,"es"));
+  $("#selEq").innerHTML = `<option value="">Todos los equipos</option>`
+    + eqs.map(e=>`<option value="${esc(e)}" ${e===FILTRO?"selected":""}>${esc(e)}</option>`).join("");
+}
+$("#selEq").addEventListener("change",e=>{
+  FILTRO = e.target.value;
+  pintarTabla(); pintarCalendario();
+  if(FILTRO) $("#calendario").scrollIntoView({behavior:"smooth",block:"start"});
+});
+
 /* ---------- Calendario completo ---------- */
 let JOR = 1;
 const iconoShare = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7"/><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/></svg>`;
@@ -774,12 +874,31 @@ function pintarCalendario(){
   }).join("");
   $("#jPrev").disabled = JOR<=1;
   $("#jNext").disabled = JOR>=total;
+  $("#jnav").hidden = !!FILTRO;          /* filtrando se ven todas las jornadas */
 
-  const ps = D.partidos.filter(p=>p.jornada===JOR);
+  /* Aviso de filtro activo */
+  const prev = $("#calAviso");
+  if(prev) prev.remove();
+  if(FILTRO){
+    const pos = tabla(D).findIndex(f=>f.nombre===FILTRO)+1;
+    $("#calBody").insertAdjacentHTML("beforebegin",
+      `<div class="filtro" id="calAviso">
+        <span>Solo los partidos de ${esc(FILTRO)} · ${pos}º clasificado</span>
+        <button type="button" id="quitarFiltro">Ver todos</button>
+      </div>`);
+    $("#quitarFiltro").addEventListener("click",()=>{
+      FILTRO=""; $("#selEq").value=""; pintarTabla(); pintarCalendario();
+    });
+  }
+
+  const ps = FILTRO
+    ? D.partidos.filter(p=>p.local===FILTRO||p.visitante===FILTRO)
+    : D.partidos.filter(p=>p.jornada===JOR);
   $("#calBody").innerHTML = ps.map((m,i)=>{
     const jugado = m.gl!==null;
     const e = jugado ? ETIQUETA[m.estado] : null;
     return `<div class="cal__m">
+      ${FILTRO?`<span class="cal__j">Jornada ${m.jornada}</span>`:""}
       <div class="cal__top">
         <span class="a">${esc(m.local)}</span>
         <span class="sc ${jugado&&(m.estado==="confirmado"||m.estado==="acta")?"":"sc--pend"}">${jugado?`${m.gl} – ${m.gv}`:"vs"}</span>
@@ -789,7 +908,7 @@ function pintarCalendario(){
         ${jugado ? `<span class="tag tag--${e.c}">${e.c==="acta"?"Sellado":e.c==="ok"?"Confirmado":"Sin confirmar"}</span>`
                  : `<small>${fmt(m.fecha,{weekday:"short",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</small>`}
         <small>${esc(m.campo)}</small>
-        ${jugado ? `<button class="share" data-p="${JOR}-${i}">${iconoShare} Compartir</button>` : ""}
+        ${jugado ? `<button class="share" data-p="${D.partidos.indexOf(m)}">${iconoShare} Compartir</button>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -800,8 +919,7 @@ $("#jNext").addEventListener("click",()=>{ if(JOR<D.totalJornadas){JOR++;pintarC
 $("#jSel").addEventListener("change",e=>{ JOR=+e.target.value; pintarCalendario(); });
 $("#calBody").addEventListener("click",e=>{
   const b=e.target.closest("[data-p]"); if(!b) return;
-  const [j,i]=b.dataset.p.split("-").map(Number);
-  abrirTarjeta(D.partidos.filter(p=>p.jornada===j)[i]);
+  abrirTarjeta(D.partidos[+b.dataset.p]);
 });
 
 /* ---------- Tarjeta compartible (canvas 1080x1080) ---------- */
@@ -1048,10 +1166,11 @@ function observar(){
 async function cargar(id){
   D = await cargarCompeticion(id);
   MODO = "general";
-  JOR = D.jugadas;
+  JOR = Math.min(Math.max(1, D.jugadas || 1), D.totalJornadas);
   $$(".tabs button").forEach((b,i)=>b.setAttribute("aria-selected", i===0));
-  pintarCabecera(); pintarTabla(); pintarJornada(); pintarGoleadores(); pintarProxima();
-  pintarCalendario(); pintarFormulario();
+  FILTRO = "";   /* se ve la competición entera; MI_CLUB solo va resaltado */
+  pintarCabecera(); pintarSelectorEquipos(); pintarTabla(); pintarJornada();
+  pintarGoleadores(); pintarProxima(); pintarCalendario(); pintarFormulario();
   observar();
 }
 
@@ -1075,6 +1194,7 @@ medirBarras();
 $("#year").textContent = new Date().getFullYear();
 
 (async function arrancar(){
+  await cargarEquipos();
   REAL = await buscarDatosReales();
   if(REAL){
     /* Hay datos publicados: el selector muestra solo lo que existe de verdad */

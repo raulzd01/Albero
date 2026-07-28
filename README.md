@@ -12,6 +12,8 @@ Web independiente. Datos no oficiales.
 | `club.html` | Plantilla de web de club, por si algún club la quiere |
 | `panel.html` | Panel de administración: generar calendario, cargar jornadas, aprobar peticiones y exportar `datos.json` |
 | `aviso-legal.html` | Aviso legal, privacidad y supresión de datos |
+| `equipos.json` | Registro de equipos: escudo, localidad y campo |
+| `escudos/` | Imágenes de los escudos |
 
 Sin dependencias, sin compilación, sin servidor. Tres archivos estáticos.
 
@@ -39,6 +41,28 @@ Marca **Enforce HTTPS** cuando GitHub te deje (tarda un rato en emitir el certif
 - [ ] Poner la fecha de última actualización del aviso legal.
 - [ ] Revisar que el aviso de "datos no oficiales" del pie del portal sigue visible.
 - [ ] Poner tu WhatsApp o tu correo en la constante `CONTACTO` de `index.html`, para que el formulario público te llegue.
+
+## Equipos y escudos
+
+Tu club se configura en la constante `MI_CLUB` al principio del script de `index.html`. Sale resaltado en verde en la clasificación.
+
+Para poner un escudo, deja la imagen en `escudos/` y añade la ruta en `equipos.json`:
+
+```json
+"C.D. Carrión": {
+  "escudo": "escudos/carrion.png",
+  "localidad": "Carrión de los Céspedes",
+  "campo": "Campo Municipal de Carrión de los Céspedes"
+}
+```
+
+Los equipos que no tengan escudo salen con uno generado a partir de sus iniciales, con un color estable derivado del nombre. No queda como un hueco: queda como una decisión.
+
+**Un escudo es una marca de su titular.** El de tu club puedes usarlo; el de los rivales necesita su permiso. Mientras no lo tengas, el escudo generado cumple y no infringe nada.
+
+## Filtrar por equipo
+
+El cuarto desplegable de la barra superior filtra por equipo. Al elegir uno, el calendario pasa a mostrar **todos sus partidos de la temporada** con el número de jornada, en lugar de una jornada suelta, y el equipo queda marcado en la clasificación.
 
 ## Cómo se actualizan los datos
 

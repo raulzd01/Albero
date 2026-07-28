@@ -1,0 +1,13 @@
+{
+  "C.D. Carrión": {
+    "localidad": "Carrión de los Céspedes",
+    "campo": "Campo Municipal de Carrión de los Céspedes",
+    "web": ""
+  },
+  "_ejemplo · borra esta entrada": {
+    "escudo": "escudos/nombre-del-club.png",
+    "localidad": "Localidad",
+    "campo": "Nombre del campo",
+    "web": "https://..."
+  }
+}
