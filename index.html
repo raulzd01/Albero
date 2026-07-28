@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Albero · Estadísticas del fútbol andaluz</title>
+<meta name="description" content="Clasificaciones, resultados y estadísticas de las categorías regionales de Andalucía: de Tercera Andaluza a División de Honor.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — mismos que la web del club, para que todo el
+   ecosistema se reconozca como la misma casa.
+   ============================================================ */
+:root{
+  --pitch-900:#0A130F; --pitch-850:#0D1712; --pitch-800:#101D17; --pitch-700:#16281F;
+  --line:#24382E; --line-soft:rgba(36,56,46,.55);
+  --neon:#B7FF3A; --albero:#D9A83C; --bone:#EEF3EA; --mute:#8DA396; --mute-dim:#5E7268;
+  --win:#B7FF3A; --draw:#8DA396; --loss:#E4572E;
+  --display:"Big Shoulders Display",Impact,sans-serif;
+  --body:"Manrope",system-ui,sans-serif;
+  --data:"IBM Plex Mono",ui-monospace,monospace;
+  --maxw:1280px; --pad:clamp(1rem,3.5vw,2.75rem); --r:4px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--bars,122px) + 14px)}
+body{margin:0;background:var(--pitch-900);color:var(--bone);font-family:var(--body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button,select,input{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+.wrap{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad)}
+.num{font-family:var(--data);font-variant-numeric:tabular-nums}
+h1,h2,h3,h4{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.01em;line-height:.94;margin:0}
+h2{font-size:clamp(1.9rem,4.6vw,2.9rem)}
+h3{font-size:1.15rem;letter-spacing:.03em}
+h4{font-size:.95rem;letter-spacing:.05em}
+.eyebrow{font-family:var(--data);font-size:.64rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--albero);display:block;margin-bottom:.7rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============================================================
+   CABECERA + BARRA DE SELECCIÓN
+   ============================================================ */
+.top{position:fixed;inset:0 0 auto 0;z-index:60;background:rgba(10,19,15,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top__in{display:flex;align-items:center;gap:1rem;height:64px}
+.logo{display:flex;align-items:center;gap:.65rem;margin-right:auto}
+.logo svg{width:30px;height:34px;flex:none}
+.logo b{font-family:var(--display);font-size:1.35rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.logo span{font-family:var(--data);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:block;margin-top:.15rem}
+.topnav{display:flex;gap:.2rem}
+.topnav a{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);padding:.5rem .75rem;border-radius:var(--r)}
+.topnav a:hover{color:var(--bone);background:var(--pitch-700)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.7rem 1.1rem;border-radius:var(--r);font-weight:700;font-size:.76rem;text-transform:uppercase;letter-spacing:.09em;border:1px solid var(--neon);background:var(--neon);color:#0A130F;transition:transform .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn--ghost{background:transparent;color:var(--bone);border-color:var(--line)}
+.btn--ghost:hover{border-color:var(--neon);color:var(--neon)}
+.btn--sm{padding:.5rem .8rem;font-size:.68rem}
+@media(max-width:860px){.topnav{display:none}}
+
+/* Barra de selección de competición: el control principal del portal */
+.picker{position:fixed;top:64px;left:0;right:0;z-index:59;background:var(--pitch-850);border-bottom:1px solid var(--line)}
+.picker__in{display:flex;align-items:center;gap:.6rem;padding-block:.6rem;flex-wrap:wrap}
+.sel{position:relative;display:flex;align-items:center}
+.sel select{
+  appearance:none;background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--r);
+  color:var(--bone);padding:.5rem 2rem .5rem .7rem;font-family:var(--data);font-size:.74rem;letter-spacing:.04em;
+}
+.sel::after{content:"";position:absolute;right:.65rem;width:6px;height:6px;border-right:1.5px solid var(--mute);border-bottom:1.5px solid var(--mute);transform:rotate(45deg) translateY(-2px);pointer-events:none}
+.sel select:focus{border-color:var(--neon);outline:none}
+.stamp{margin-left:auto;display:flex;align-items:center;gap:.45rem;font-family:var(--data);font-size:.66rem;color:var(--mute);letter-spacing:.04em}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 0 0 rgba(183,255,58,.55);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(183,255,58,.5)}70%{box-shadow:0 0 0 9px rgba(183,255,58,0)}100%{box-shadow:0 0 0 0 rgba(183,255,58,0)}}
+@media(max-width:860px){
+  .stamp{margin-left:0;width:100%;order:9}
+}
+
+/* ============================================================
+   TIRA DE CABECERA DE COMPETICIÓN
+   ============================================================ */
+.head{padding:calc(var(--bars,122px) + 2.4rem) 0 2rem;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.head::before{content:"";position:absolute;inset:0;background:radial-gradient(90% 120% at 8% 0%,rgba(183,255,58,.11),transparent 62%),radial-gradient(60% 90% at 92% 0%,rgba(217,168,60,.1),transparent 66%)}
+.head__in{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:2rem;flex-wrap:wrap}
+.head h1{font-size:clamp(2.1rem,6.5vw,4rem)}
+.head h1 em{font-style:normal;color:var(--albero)}
+.head__meta{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.9rem}
+.chip{font-family:var(--data);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:.28rem .7rem}
+.chip--live{color:var(--neon);border-color:rgba(183,255,58,.4)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(88px,1fr));gap:.5rem}
+.kpi{background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--r);padding:.7rem .8rem;min-width:96px}
+.kpi b{font-family:var(--data);font-weight:600;font-size:1.5rem;display:block;line-height:1}
+.kpi small{font-family:var(--data);font-size:.56rem;letter-spacing:.13em;text-transform:uppercase;color:var(--mute)}
+
+/* ============================================================
+   REJILLA PRINCIPAL
+   ============================================================ */
+.main{padding:2.2rem 0 4rem}
+.grid{display:grid;grid-template-columns:1.6fr 1fr;gap:1.4rem;align-items:start}
+.grid>*{min-width:0}
+@media(max-width:1020px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.panel+.panel{margin-top:1.4rem}
+.panel__hd{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.85rem 1rem;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel__hd span.meta{font-family:var(--data);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.tabs{display:flex;gap:.2rem;background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--r);padding:.2rem}
+.tabs button{background:none;border:0;color:var(--mute);padding:.38rem .7rem;border-radius:2px;font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.tabs button[aria-selected="true"]{background:var(--neon);color:#0A130F}
+
+/* Tabla */
+.tscroll{overflow-x:auto;max-width:100%}
+table{width:100%;border-collapse:collapse;min-width:660px}
+th,td{padding:.58rem .45rem;text-align:center;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+th{font-family:var(--data);font-size:.58rem;letter-spacing:.11em;text-transform:uppercase;color:var(--mute);font-weight:600;background:var(--pitch-700)}
+td{font-family:var(--data);font-size:.8rem;color:var(--mute)}
+.c-pos{width:36px}
+.c-team{text-align:left;position:sticky;left:0;background:var(--pitch-800);padding-left:.9rem;min-width:186px;z-index:1}
+th.c-team{background:var(--pitch-700)}
+.teamcell{display:flex;align-items:center;gap:.55rem;font-family:var(--body);font-size:.85rem;font-weight:700;color:var(--bone);text-align:left}
+.teamcell svg{width:20px;height:23px;flex:none}
+.teamcell button{background:none;border:0;color:inherit;font:inherit;padding:0;text-align:left}
+.teamcell button:hover{color:var(--neon)}
+.c-pts{color:var(--bone);font-weight:600;font-size:.93rem}
+tbody tr:hover td{background:rgba(22,40,31,.5)}
+tbody tr:hover .c-team{background:var(--pitch-700)}
+.pos{display:inline-flex;width:21px;height:21px;align-items:center;justify-content:center;border-radius:2px;font-size:.68rem;font-weight:600}
+.pos--asc{background:rgba(183,255,58,.16);color:var(--neon)}
+.pos--pro{background:rgba(217,168,60,.16);color:var(--albero)}
+.pos--des{background:rgba(228,87,46,.16);color:var(--loss)}
+.racha{display:inline-flex;gap:3px}
+.racha i{width:15px;height:15px;border-radius:2px;font-style:normal;font-family:var(--data);font-size:.55rem;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+.racha i[data-r="V"]{background:rgba(183,255,58,.18);color:var(--win)}
+.racha i[data-r="E"]{background:rgba(141,163,150,.18);color:var(--draw)}
+.racha i[data-r="D"]{background:rgba(228,87,46,.18);color:var(--loss)}
+.legend{display:flex;flex-wrap:wrap;gap:.9rem;padding:.75rem 1rem;font-family:var(--data);font-size:.6rem;color:var(--mute);letter-spacing:.05em;border-top:1px solid var(--line)}
+.legend b{color:var(--bone);font-weight:600}
+
+/* Resultados de la jornada con trazabilidad */
+.match{display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center;padding:.7rem 1rem .3rem}
+.match span{font-size:.79rem;font-weight:700}
+.match .a{text-align:right}
+.match .b{text-align:left}
+.sc{font-family:var(--data);font-size:.84rem;font-weight:600;background:var(--pitch-700);border:1px solid var(--line);border-radius:2px;padding:.2rem .5rem;min-width:54px;text-align:center}
+.sc--pend{border-style:dashed;color:var(--mute)}
+.trace{padding:0 1rem .7rem;border-bottom:1px solid var(--line-soft);display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.trace:last-child{border-bottom:0}
+.tag{font-family:var(--data);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;padding:.16rem .45rem;border-radius:2px;border:1px solid}
+.tag--ok{color:var(--neon);border-color:rgba(183,255,58,.35);background:rgba(183,255,58,.07)}
+.tag--acta{color:var(--albero);border-color:rgba(217,168,60,.35);background:rgba(217,168,60,.07)}
+.tag--pend{color:var(--mute);border-color:var(--line)}
+.trace small{font-family:var(--data);font-size:.58rem;color:var(--mute-dim)}
+
+/* Goleadores */
+.rank{display:flex;flex-direction:column}
+.rank__row{display:grid;grid-template-columns:22px 1fr auto;gap:.7rem;align-items:center;padding:.62rem 1rem;border-bottom:1px solid var(--line-soft)}
+.rank__row:last-child{border-bottom:0}
+.rank__row i{font-style:normal;font-family:var(--data);font-size:.68rem;color:var(--albero)}
+.rank__row strong{font-size:.83rem;display:block;font-weight:700}
+.rank__row small{color:var(--mute);font-size:.7rem}
+.rank__row b{font-family:var(--data);font-size:1.05rem;color:var(--neon)}
+
+/* Próxima jornada */
+.fix{display:flex;flex-direction:column}
+.fix__row{padding:.65rem 1rem;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:.7rem;align-items:baseline}
+.fix__row:last-child{border-bottom:0}
+.fix__row p{margin:0;font-size:.8rem;font-weight:600}
+.fix__row small{font-family:var(--data);font-size:.62rem;color:var(--mute);white-space:nowrap}
+
+/* Calendario completo */
+.jnav{display:flex;align-items:center;gap:.3rem}
+.jnav button{background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--r);color:var(--bone);width:30px;height:30px;font-size:1rem;line-height:1}
+.jnav button:hover:not(:disabled){border-color:var(--neon);color:var(--neon)}
+.jnav button:disabled{opacity:.35;cursor:not-allowed}
+.cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.cal>*{min-width:0}
+.cal__m{padding:.75rem .95rem;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft);display:grid;gap:.4rem}
+.cal__top{display:grid;grid-template-columns:1fr auto 1fr;gap:.45rem;align-items:center}
+.cal__top span{font-size:.79rem;font-weight:700}
+.cal__top .a{text-align:right}
+.cal__bot{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.cal__bot small{font-family:var(--data);font-size:.58rem;color:var(--mute);letter-spacing:.04em}
+.share{margin-left:auto;background:none;border:1px solid var(--line);border-radius:var(--r);color:var(--mute);padding:.2rem .45rem;font-family:var(--data);font-size:.56rem;letter-spacing:.09em;text-transform:uppercase;display:inline-flex;gap:.3rem;align-items:center}
+.share:hover{border-color:var(--neon);color:var(--neon)}
+.share svg{width:11px;height:11px}
+
+/* Tarjeta compartible */
+.modal{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal.is-open{display:flex}
+.modal__bg{position:absolute;inset:0;background:rgba(5,10,8,.78);backdrop-filter:blur(4px)}
+.modal__box{position:relative;background:var(--pitch-850);border:1px solid var(--line);border-radius:var(--r);width:min(400px,100%);max-height:92vh;overflow-y:auto;padding:1.1rem}
+.modal__box h3{margin-bottom:.2rem}
+.modal__box p.hint{margin:0 0 .9rem;font-size:.8rem;color:var(--mute)}
+#lienzo{width:100%;height:auto;border:1px solid var(--line);border-radius:var(--r);display:block;background:var(--pitch-900)}
+.modal__acts{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.9rem}
+.modal__acts .btn{width:100%}
+.modal__close{position:absolute;top:.6rem;right:.6rem;background:none;border:1px solid var(--line);border-radius:var(--r);color:var(--mute);width:30px;height:30px}
+.modal__close:hover{color:var(--neon);border-color:var(--neon)}
+
+/* ============================================================
+   BLOQUE DE CONFIANZA (el diferenciador)
+   ============================================================ */
+.trust{border-top:1px solid var(--line);background:var(--pitch-850);padding:3.4rem 0}
+.trust__in{display:grid;grid-template-columns:1fr 1fr;gap:2.6rem;align-items:start}
+.trust__in>*{min-width:0}
+.frow>*{min-width:0}
+@media(max-width:900px){.trust__in{grid-template-columns:1fr;gap:2rem}}
+.trust p.lead{color:var(--mute);max-width:44ch}
+.steps{display:grid;gap:.7rem;margin-top:1.6rem;counter-reset:s}
+.step{display:grid;grid-template-columns:30px 1fr;gap:.9rem;align-items:start;padding-bottom:.7rem;border-bottom:1px solid var(--line-soft)}
+.step:last-child{border-bottom:0}
+.step::before{counter-increment:s;content:counter(s);font-family:var(--data);font-size:.68rem;color:var(--albero);border:1px solid var(--line);border-radius:2px;width:30px;height:24px;display:flex;align-items:center;justify-content:center}
+.step h4{margin-bottom:.2rem}
+.step p{margin:0;font-size:.85rem;color:var(--mute)}
+
+/* Formulario del delegado */
+.form{background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--r);padding:1.4rem}
+.form h3{margin-bottom:.4rem}
+.form>p{margin:0 0 1.2rem;font-size:.85rem;color:var(--mute)}
+.f{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.8rem}
+.f label{font-family:var(--data);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--mute)}
+.f input,.f select{background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--r);color:var(--bone);padding:.62rem .7rem;font-size:.88rem;width:100%;min-width:0;max-width:100%}
+.f input:focus,.f select:focus{border-color:var(--neon);outline:none}
+.frow{display:grid;grid-template-columns:1fr 60px 60px 1fr;gap:.5rem;align-items:end}
+@media(max-width:520px){.frow{grid-template-columns:1fr 1fr}}
+.msg{font-family:var(--data);font-size:.7rem;min-height:1.3em;margin:.4rem 0 0}
+.msg[data-s="ok"]{color:var(--neon)}
+.msg[data-s="err"]{color:var(--loss)}
+
+/* ============================================================
+   FICHA DE EQUIPO (cajón lateral)
+   ============================================================ */
+.drawer{position:fixed;inset:0;z-index:80;display:none}
+.drawer.is-open{display:block}
+.drawer__bg{position:absolute;inset:0;background:rgba(5,10,8,.7);backdrop-filter:blur(3px)}
+.drawer__panel{
+  position:absolute;top:0;right:0;bottom:0;width:min(420px,100%);
+  background:var(--pitch-850);border-left:1px solid var(--line);overflow-y:auto;
+  transform:translateX(100%);transition:transform .28s ease;
+}
+.drawer.is-open .drawer__panel{transform:none}
+.drawer__hd{position:sticky;top:0;background:var(--pitch-850);border-bottom:1px solid var(--line);padding:1.1rem;display:flex;align-items:flex-start;gap:.8rem}
+.drawer__hd h3{font-size:1.4rem;line-height:1}
+.drawer__hd small{font-family:var(--data);font-size:.62rem;color:var(--mute);letter-spacing:.08em}
+.x{margin-left:auto;background:none;border:1px solid var(--line);border-radius:var(--r);color:var(--mute);width:32px;height:32px;flex:none;font-size:1rem;line-height:1}
+.x:hover{color:var(--neon);border-color:var(--neon)}
+.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;padding:1.1rem}
+.dstats div{background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--r);padding:.6rem;text-align:center}
+.dstats b{font-family:var(--data);font-size:1.15rem;display:block;line-height:1}
+.dstats small{font-family:var(--data);font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.dsec{padding:0 1.1rem 1.4rem}
+.dsec h4{margin:1rem 0 .6rem;color:var(--albero)}
+
+/* ============================================================
+   PIE
+   ============================================================ */
+.foot{border-top:1px solid var(--line);background:#080F0C;padding:2.6rem 0 1.4rem}
+.foot__grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:2rem;padding-bottom:2rem}
+@media(max-width:820px){.foot__grid{grid-template-columns:1fr;gap:1.6rem}}
+.foot h4{color:var(--bone);margin-bottom:.7rem}
+.foot p,.foot li{color:var(--mute);font-size:.82rem;margin:0 0 .35rem}
+.foot ul{list-style:none;padding:0;margin:0}
+.foot a:hover{color:var(--neon)}
+.disclaimer{border:1px solid var(--line);border-left:2px solid var(--albero);border-radius:var(--r);padding:.9rem 1rem;background:var(--pitch-850)}
+.disclaimer p{font-size:.78rem;line-height:1.6;color:var(--mute)}
+.disclaimer strong{color:var(--bone)}
+.foot__bar{border-top:1px solid var(--line);padding-top:1.2rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;font-family:var(--data);font-size:.62rem;color:var(--mute-dim);letter-spacing:.04em}
+
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+  html{scroll-behavior:auto}
+  .drawer__panel{transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= CABECERA ================= -->
+<header class="top">
+  <div class="wrap top__in">
+    <a class="logo" href="#">
+      <svg viewBox="0 0 30 34" aria-hidden="true">
+        <path d="M15 1l13.5 4.8V19c0 7-6 11.9-13.5 14C7.5 30.9 1.5 26 1.5 19V5.8z" fill="#101D17" stroke="#D9A83C" stroke-width="1.4"/>
+        <path d="M8.5 22c2.4-7.2 4.4-10.4 6.5-13 2.1 2.6 4.1 5.8 6.5 13" fill="none" stroke="#B7FF3A" stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+      <span><b>Albero</b><span>Fútbol andaluz, dato a dato</span></span>
+    </a>
+    <nav class="topnav">
+      <a href="#clasificacion">Clasificación</a>
+      <a href="#jornada">Jornada</a>
+      <a href="#goleadores">Goleadores</a>
+      <a href="#como">Cómo se actualiza</a>
+    </nav>
+    <a class="btn btn--sm" href="#enviar">Enviar resultado</a>
+  </div>
+</header>
+
+<!-- ================= SELECTOR DE COMPETICIÓN ================= -->
+<div class="picker">
+  <div class="wrap picker__in">
+    <label class="sr" for="selProv">Provincia</label>
+    <span class="sel"><select id="selProv"></select></span>
+    <label class="sr" for="selCat">Categoría</label>
+    <span class="sel"><select id="selCat"></select></span>
+    <label class="sr" for="selGrp">Grupo</label>
+    <span class="sel"><select id="selGrp"></select></span>
+    <span class="stamp"><i class="dot"></i><span id="stamp">—</span></span>
+  </div>
+</div>
+
+<!-- ================= CABECERA DE COMPETICIÓN ================= -->
+<section class="head">
+  <div class="wrap head__in">
+    <div>
+      <span class="eyebrow" id="hdEyebrow">—</span>
+      <h1 id="hdTitle">—</h1>
+      <div class="head__meta" id="hdMeta"></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </div>
+</section>
+
+<main class="main">
+  <div class="wrap grid">
+
+    <!-- ---------- CLASIFICACIÓN ---------- -->
+    <div>
+      <section class="panel reveal" id="clasificacion">
+        <div class="panel__hd">
+          <h3 id="tbTitle">Clasificación general</h3>
+          <div class="tabs" role="tablist" aria-label="Tipo de clasificación">
+            <button role="tab" aria-selected="true" data-mode="general">General</button>
+            <button role="tab" aria-selected="false" data-mode="casa">Casa</button>
+            <button role="tab" aria-selected="false" data-mode="fuera">Fuera</button>
+          </div>
+        </div>
+        <div class="tscroll">
+          <table>
+            <caption class="sr">Clasificación del grupo</caption>
+            <thead><tr>
+              <th class="c-pos" scope="col">#</th>
+              <th class="c-team" scope="col">Equipo</th>
+              <th scope="col">PT</th><th scope="col">PJ</th><th scope="col">G</th><th scope="col">E</th><th scope="col">P</th>
+              <th scope="col">GF</th><th scope="col">GC</th><th scope="col">DG</th><th scope="col">Racha</th>
+            </tr></thead>
+            <tbody id="tbBody"></tbody>
+          </table>
+        </div>
+        <div class="legend">
+          <span><b>Verde</b> ascenso</span><span><b>Oro</b> promoción</span><span><b>Rojo</b> descenso</span>
+          <span><b>Racha</b> últimas 5, la más reciente a la derecha</span>
+          <span>Toca un equipo para ver su ficha</span>
+        </div>
+      </section>
+    </div>
+
+    <!-- ---------- COLUMNA DERECHA ---------- -->
+    <div>
+      <section class="panel reveal" id="jornada">
+        <div class="panel__hd">
+          <h3 id="jrTitle">Última jornada</h3>
+          <span class="meta" id="jrMeta">—</span>
+        </div>
+        <div id="jrBody"></div>
+      </section>
+
+      <section class="panel reveal" id="goleadores">
+        <div class="panel__hd"><h3>Goleadores del grupo</h3><span class="meta">Goles</span></div>
+        <div class="rank" id="glBody"></div>
+      </section>
+
+      <section class="panel reveal">
+        <div class="panel__hd"><h3>Próxima jornada</h3><span class="meta" id="nxMeta">—</span></div>
+        <div class="fix" id="nxBody"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ---------- CALENDARIO COMPLETO ---------- -->
+  <div class="wrap" style="margin-top:1.4rem">
+    <section class="panel reveal" id="calendario">
+      <div class="panel__hd">
+        <h3>Calendario completo</h3>
+        <div class="jnav">
+          <button id="jPrev" aria-label="Jornada anterior">‹</button>
+          <span class="sel"><select id="jSel" aria-label="Elegir jornada"></select></span>
+          <button id="jNext" aria-label="Jornada siguiente">›</button>
+        </div>
+      </div>
+      <div class="cal" id="calBody"></div>
+      <div class="legend">
+        <span><b>Sellado</b> cotejado con el acta</span>
+        <span><b>Sin confirmar</b> lo ha enviado un solo club</span>
+        <span>El botón de compartir genera una imagen para WhatsApp</span>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ================= CÓMO SE ACTUALIZA ================= -->
+<section class="trust" id="como">
+  <div class="wrap trust__in">
+    <div class="reveal">
+      <span class="eyebrow">Trazabilidad</span>
+      <h2>De dónde sale<br>cada resultado</h2>
+      <p class="lead">Ningún dato aparece aquí sin que se sepa quién lo puso y cuándo. Si un resultado está sin confirmar, lo verás marcado como tal en lugar de presentado como si fuese oficial.</p>
+      <div class="steps">
+        <div class="step">
+          <div><h4>El delegado lo envía</h4><p>Al acabar el partido, el delegado de cualquiera de los dos equipos manda el resultado y los goleadores desde el móvil.</p></div>
+        </div>
+        <div class="step">
+          <div><h4>Se cruza con el otro club</h4><p>Cuando los dos clubes coinciden, el resultado pasa a confirmado. Si no coinciden, queda en discrepancia y no se publica como firme.</p></div>
+        </div>
+        <div class="step">
+          <div><h4>Se coteja con el acta</h4><p>Al cerrarse el acta arbitral se contrasta y el partido queda sellado. Ahí es cuando la clasificación se considera definitiva.</p></div>
+        </div>
+        <div class="step">
+          <div><h4>La tabla se recalcula sola</h4><p>Los puntos nunca se escriben a mano: salen de los resultados. Así la clasificación no puede contradecir a los partidos.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form reveal" id="enviar">
+      <h3>Enviar un resultado</h3>
+      <p>Para delegados y colaboradores. Tarda menos de un minuto y queda a tu nombre.</p>
+      <form id="sendForm" novalidate>
+        <div class="f">
+          <label for="fComp">Competición</label>
+          <select id="fComp"></select>
+        </div>
+        <div class="frow">
+          <div class="f" style="margin:0"><label for="fLocal">Local</label><select id="fLocal"></select></div>
+          <div class="f" style="margin:0"><label for="fGl">GL</label><input id="fGl" type="number" min="0" max="30" inputmode="numeric"></div>
+          <div class="f" style="margin:0"><label for="fGv">GV</label><input id="fGv" type="number" min="0" max="30" inputmode="numeric"></div>
+          <div class="f" style="margin:0"><label for="fVis">Visitante</label><select id="fVis"></select></div>
+        </div>
+        <div class="f">
+          <label for="fRole">Envías como</label>
+          <select id="fRole">
+            <option>Delegado del equipo local</option>
+            <option>Delegado del equipo visitante</option>
+            <option>Colaborador presente en el campo</option>
+          </select>
+        </div>
+        <div class="f">
+          <label for="fName">Tu nombre</label>
+          <input id="fName" type="text" autocomplete="name">
+        </div>
+        <button class="btn" type="submit">Enviar resultado</button>
+        <p class="msg" id="fMsg" role="status"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FICHA DE EQUIPO ================= -->
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drTeam">
+  <div class="drawer__bg" data-close></div>
+  <div class="drawer__panel">
+    <div class="drawer__hd">
+      <div><h3 id="drTeam">—</h3><small id="drSub">—</small></div>
+      <button class="x" data-close aria-label="Cerrar ficha">✕</button>
+    </div>
+    <div class="dstats" id="drStats"></div>
+    <div class="dsec">
+      <h4>Últimos partidos</h4>
+      <div id="drMatches"></div>
+      <h4>Máximos goleadores</h4>
+      <div class="rank" id="drScorers"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TARJETA COMPARTIBLE ================= -->
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mdTit">
+  <div class="modal__bg" data-cerrar></div>
+  <div class="modal__box">
+    <button class="modal__close" data-cerrar aria-label="Cerrar">✕</button>
+    <h3 id="mdTit">Compartir el partido</h3>
+    <p class="hint">Imagen cuadrada, lista para WhatsApp o Instagram.</p>
+    <canvas id="lienzo" width="1080" height="1080" role="img" aria-label="Tarjeta del partido"></canvas>
+    <div class="modal__acts">
+      <button class="btn" id="btnShare">Compartir</button>
+      <button class="btn btn--ghost" id="btnDown">Descargar</button>
+    </div>
+    <button class="btn btn--ghost btn--sm" id="btnCopy" style="width:100%;margin-top:.5rem">Copiar el resultado como texto</button>
+    <p class="msg" id="mdMsg" role="status"></p>
+  </div>
+</div>
+
+<!-- ================= PIE ================= -->
+<footer class="foot">
+  <div class="wrap foot__grid">
+    <div>
+      <h4>Albero</h4>
+      <div class="disclaimer">
+        <p><strong>Albero es un portal independiente</strong> mantenido por aficionados y colaboradores voluntarios. No es una web oficial ni mantiene vinculación, patrocinio ni afiliación con la Real Federación Andaluza de Fútbol ni con los clubes mencionados. Los datos proceden de aportaciones de clubes y colaboradores y pueden contener errores o retrasos. La información oficial es la que publica la RFAF.</p>
+      </div>
+    </div>
+    <div>
+      <h4>Competiciones</h4>
+      <ul>
+        <li><a href="#">División de Honor Andaluza</a></li>
+        <li><a href="#">Primera Andaluza Sevilla</a></li>
+        <li><a href="#">Segunda Andaluza Sevilla</a></li>
+        <li><a href="#">Tercera Andaluza Sevilla</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>El proyecto</h4>
+      <ul>
+        <li><a href="#como">Cómo se actualiza</a></li>
+        <li><a href="#enviar">Hazte colaborador</a></li>
+        <li><a href="aviso-legal.html">Aviso legal</a></li>
+        <li><a href="aviso-legal.html#privacidad">Privacidad y datos de jugadores</a></li>
+        <li><a href="aviso-legal.html#supresion">Solicitar la supresión de un dato</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap foot__bar">
+    <span>© <span id="year">2026</span> Albero · Datos no oficiales</span>
+    <span id="footStamp">—</span>
+  </div>
+</footer>
+
+<script>
+/* ============================================================================
+   1. CAPA DE DATOS
+   Una función, cargarCompeticion(id), y toda la web funciona. Sustituye su
+   cuerpo por tu API (BeSoccer, tu propio backend) manteniendo el formato.
+   Los datos de aquí son de muestra y los nombres son inventados.
+   ============================================================================ */
+
+/* Catálogo de competiciones. En producción sale de un endpoint /competiciones. */
+const CATALOGO = [
+  { id:"dh-and-2",  provincia:"Andalucía", categoria:"División de Honor Andaluza", grupo:"Grupo 2", equipos:18, asc:1, pro:4, des:3 },
+  { id:"1a-sev",    provincia:"Sevilla",   categoria:"Primera Andaluza",           grupo:"Único",   equipos:18, asc:1, pro:4, des:3 },
+  { id:"2a-sev-1",  provincia:"Sevilla",   categoria:"Segunda Andaluza",           grupo:"Grupo 1", equipos:18, asc:1, pro:3, des:2 },
+  { id:"2a-sev-2",  provincia:"Sevilla",   categoria:"Segunda Andaluza",           grupo:"Grupo 2", equipos:18, asc:1, pro:3, des:2 },
+  { id:"3a-sev-1",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 1", equipos:16, asc:1, pro:3, des:2 },
+  { id:"3a-sev-2",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 2", equipos:16, asc:1, pro:3, des:2 },
+  { id:"3a-sev-3",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 3", equipos:16, asc:1, pro:3, des:2 },
+  { id:"3a-sev-6",  provincia:"Sevilla",   categoria:"Tercera Andaluza",           grupo:"Grupo 6", equipos:16, asc:1, pro:3, des:2 }
+];
+
+/* --- Generador de datos de muestra, con semilla para que sea estable --- */
+const NOMBRES = ["Vega Alta","Olivar C.F.","Ribera del Sur","Los Alcores C.D.","Atlético Marisma","Puente Nuevo","Cerro Alto","Molino Viejo","Dehesa C.F.","Naranjos C.D.","Torre Blanca","Guadaíra F.C.","Trianilla C.D.","Corta Baja","Pinares Unión","Estrella Sur","Aljarafe Norte","Campiña C.D.","Isla Menor","Alamillo C.F."];
+const JUGADORES = ["Álvaro Ruiz","Iván Perea","Curro Domínguez","Jesús Manzano","Adrián Vela","Rafa Cordero","Juanma Ortega","Pablo Nieto","Sergio Lobato","Manu Rincón","Fran Zamora","Mohamed Diarra","Dani Herrera","Nacho Bermejo","Paco Vidal","Kevin Osei"];
+function rng(seed){ let s = [...seed].reduce((a,c)=>a+c.charCodeAt(0),0)||1;
+  return ()=>{ s=(s*1103515245+12345)&0x7fffffff; return s/0x7fffffff; }; }
+
+/* Calendario de ida y vuelta por el método del círculo: el mismo que usa
+   cualquier federación para sortear una liga. */
+function rondas(n){
+  const ids=[...Array(n).keys()], ida=[];
+  for(let j=0;j<n-1;j++){
+    const pares=[];
+    for(let i=0;i<n/2;i++){
+      const a=ids[i], b=ids[n-1-i];
+      pares.push(j%2 ? [b,a] : [a,b]);
+    }
+    ida.push(pares);
+    ids.splice(1,0,ids.pop());
+  }
+  return [...ida, ...ida.map(j=>j.map(([a,b])=>[b,a]))];
+}
+
+const CAMPOS=["El Olivar","La Vega","San Isidro","Las Portadas","El Palmar","Los Llanos"];
+const AUTORES=["colaborador Curro","colaborador Marisa","delegado del club local","delegado del club visitante"];
+
+function construir(comp){
+  const r=rng(comp.id), n=comp.equipos;
+  const equipos=NOMBRES.slice(0,n).map((nombre,i)=>({nombre, fuerza:1-i/n+(r()-.5)*.3}));
+  const jor=rondas(n), total=jor.length, jugadas=Math.min(11,total);
+  const inicio=Date.UTC(2026,8,6,16,0);          /* domingo 6 de septiembre de 2026 */
+  const partidos=[];
+
+  jor.forEach((ronda,ri)=>{
+    const j=ri+1, jugado=j<=jugadas;
+    ronda.forEach(([a,b])=>{
+      const L=equipos[a], V=equipos[b];
+      let gl=null,gv=null,estado="programado",autor=null,hace=null;
+      if(jugado){
+        const d=L.fuerza-V.fuerza;
+        gl=Math.max(0,Math.round(1.35+d*2.1+(r()-.5)*2.2));
+        gv=Math.max(0,Math.round(1.05-d*2.1+(r()-.5)*2.2));
+        if(j===jugadas){                          /* la última jornada aún se está cerrando */
+          const x=r();
+          estado = x>.86 ? "discrepancia" : x>.74 ? "pendiente" : x>.4 ? "confirmado" : "acta";
+        } else estado="acta";
+        autor=AUTORES[Math.floor(r()*AUTORES.length)];
+        hace=Math.floor(r()*(j===jugadas?600:20000))+9;
+      }
+      partidos.push({
+        jornada:j, local:L.nombre, visitante:V.nombre, gl, gv, estado, autor, hace,
+        fecha:new Date(inicio+(j-1)*7*864e5+(r()>.55?0:2*36e5)).toISOString(),
+        campo:"Campo Municipal "+CAMPOS[Math.floor(r()*CAMPOS.length)]
+      });
+    });
+  });
+
+  const jugados=partidos.filter(p=>p.gl!==null);
+  const goleadores=JUGADORES.slice(0,8).map((nombre,i)=>({
+    nombre, equipo:equipos[Math.floor(r()*Math.min(7,n))].nombre, goles:Math.max(2,13-i-Math.floor(r()*2))
+  })).sort((a,b)=>b.goles-a.goles);
+
+  return {
+    id:comp.id, competicion:comp, jornada:jugadas+1, jugadas, totalJornadas:total,
+    actualizado:new Date(Date.now()-1000*60*14).toISOString(),
+    partidos,
+    resultados:partidos.filter(p=>p.jornada===jugadas),
+    proxima:partidos.filter(p=>p.jornada===jugadas+1),
+    goleadores,
+    _jugados:jugados.length
+  };
+}
+
+/* Punto único de conexión. Cambia solo este cuerpo. */
+async function cargarCompeticion(id){
+  // const res = await fetch(`/api/competiciones/${id}`); return normalizar(await res.json());
+  return construir(CATALOGO.find(c=>c.id===id));
+}
+
+/* ============================================================================
+   2. UTILIDADES
+   ============================================================================ */
+const $  = (s,c=document)=>c.querySelector(s);
+const $$ = (s,c=document)=>[...c.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const escudo = n => `<svg viewBox="0 0 20 23" aria-hidden="true"><path d="M10 1l8.4 3V13.5c0 4.7-3.8 8-8.4 9-4.6-1-8.4-4.3-8.4-9V4z" fill="#16281F" stroke="#3A5347" stroke-width="1.2"/><text x="10" y="15" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7.5" font-weight="600" fill="#8DA396">${esc(n.trim()[0])}</text></svg>`;
+const hace = min => min<60 ? `hace ${min} min` : min<1440 ? `hace ${Math.floor(min/60)} h` : `hace ${Math.floor(min/1440)} d`;
+const fmt = (iso,o)=>new Intl.DateTimeFormat("es-ES",o).format(new Date(iso));
+
+/* Clasificación derivada de los partidos. Los puntos NUNCA se guardan en
+   ningún sitio: se calculan aquí. Así la tabla no puede contradecir al
+   calendario, y cambiar un resultado corrige la tabla sola. */
+function tabla(datos, modo="general"){
+  const t={};
+  const toca = n => t[n] || (t[n] = {nombre:n,pg:0,pe:0,pp:0,gf:0,gc:0,hist:[]});
+  datos.partidos.forEach(p=>{ toca(p.local); toca(p.visitante); });
+  datos.partidos.filter(p=>p.gl!==null).forEach(p=>{
+    const L=t[p.local], V=t[p.visitante];
+    const rL = p.gl>p.gv ? "V" : p.gl===p.gv ? "E" : "D";
+    L.hist.push(rL); V.hist.push(rL==="V"?"D":rL==="D"?"V":"E");
+    if(modo!=="fuera"){ L.gf+=p.gl; L.gc+=p.gv; rL==="V"?L.pg++:rL==="E"?L.pe++:L.pp++; }
+    if(modo!=="casa"){  V.gf+=p.gv; V.gc+=p.gl; rL==="D"?V.pg++:rL==="E"?V.pe++:V.pp++; }
+  });
+  return Object.values(t).map(f=>({
+    ...f, pj:f.pg+f.pe+f.pp, pt:f.pg*3+f.pe, dg:f.gf-f.gc,
+    racha:f.hist.slice(-5).join("")
+  })).sort((a,b)=> b.pt-a.pt || b.dg-a.dg || b.gf-a.gf || a.nombre.localeCompare(b.nombre,"es"));
+}
+
+/* ============================================================================
+   3. PINTADO
+   ============================================================================ */
+let D = null, MODO = "general";
+
+function pintarCabecera(){
+  const c = D.competicion;
+  $("#hdEyebrow").textContent = `${c.provincia} · Temporada 2026/27`;
+  $("#hdTitle").innerHTML = `${esc(c.categoria)} <em>${esc(c.grupo)}</em>`;
+  $("#hdMeta").innerHTML = `
+    <span class="chip chip--live">Jornada ${D.jornada} en curso</span>
+    <span class="chip">${c.equipos} equipos</span>
+    <span class="chip">${D.jugadas} jornadas jugadas</span>`;
+
+  const goles = D.resultados.reduce((a,m)=>a+(m.gl??0)+(m.gv??0),0);
+  const conf = D.resultados.filter(m=>m.estado==="confirmado"||m.estado==="acta").length;
+  $("#kpis").innerHTML = `
+    <div class="kpi"><b class="num">${goles}</b><small>Goles jornada</small></div>
+    <div class="kpi"><b class="num">${conf}/${D.resultados.length}</b><small>Confirmados</small></div>
+    <div class="kpi"><b class="num">${(goles/D.resultados.length).toFixed(1)}</b><small>Media gol/partido</small></div>`;
+
+  const sello = `Actualizado ${hace(14)}`;
+  $("#stamp").textContent = sello;
+  $("#footStamp").textContent = `Última actualización: ${fmt(D.actualizado,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}`;
+}
+
+function pintarTabla(){
+  const rows = tabla(D,MODO), n = rows.length, c = D.competicion;
+  $("#tbTitle").textContent = MODO==="general" ? "Clasificación general"
+    : MODO==="casa" ? "Clasificación solo en casa" : "Clasificación solo fuera";
+  $("#tbBody").innerHTML = rows.map((f,i)=>{
+    const p=i+1;
+    const cls = p<=c.asc ? "pos--asc" : p<=c.pro ? "pos--pro" : p>n-c.des ? "pos--des" : "";
+    return `<tr>
+      <td class="c-pos"><span class="pos ${cls}">${p}</span></td>
+      <td class="c-team"><span class="teamcell">${escudo(f.nombre)}<button type="button" data-team="${esc(f.nombre)}">${esc(f.nombre)}</button></span></td>
+      <td class="c-pts">${f.pt}</td><td>${f.pj}</td><td>${f.pg}</td><td>${f.pe}</td><td>${f.pp}</td>
+      <td>${f.gf}</td><td>${f.gc}</td><td>${f.dg>0?"+":""}${f.dg}</td>
+      <td><span class="racha">${[...f.racha].map(x=>`<i data-r="${x}">${x}</i>`).join("")}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+const ETIQUETA = {
+  confirmado:{c:"ok",   t:"Confirmado por los dos clubes"},
+  acta:      {c:"acta", t:"Cotejado con el acta"},
+  pendiente: {c:"pend", t:"Falta confirmar"},
+  discrepancia:{c:"pend", t:"Discrepancia entre clubes"}
+};
+
+function pintarJornada(){
+  $("#jrTitle").textContent = `Jornada ${D.jugadas}`;
+  $("#jrMeta").textContent = `${D.resultados.length} partidos`;
+  $("#jrBody").innerHTML = D.resultados.map(m=>{
+    const e = ETIQUETA[m.estado];
+    const firme = m.estado==="confirmado"||m.estado==="acta";
+    return `<div class="match">
+        <span class="a">${esc(m.local)}</span>
+        <span class="sc ${firme?"":"sc--pend"}">${m.gl} – ${m.gv}</span>
+        <span class="b">${esc(m.visitante)}</span>
+      </div>
+      <div class="trace">
+        <span class="tag tag--${e.c}">${e.t}</span>
+        <small>${esc(m.autor)} · ${hace(m.hace)}</small>
+      </div>`;
+  }).join("");
+}
+
+function pintarGoleadores(){
+  $("#glBody").innerHTML = D.goleadores.map((g,i)=>`
+    <div class="rank__row">
+      <i>${String(i+1).padStart(2,"0")}</i>
+      <div><strong>${esc(g.nombre)}</strong><small>${esc(g.equipo)}</small></div>
+      <b class="num">${g.goles}</b>
+    </div>`).join("");
+}
+
+function pintarProxima(){
+  $("#nxMeta").textContent = `Jornada ${D.jugadas+1}`;
+  $("#nxBody").innerHTML = D.proxima.map(m=>`
+    <div class="fix__row">
+      <p>${esc(m.local)} <span style="color:var(--albero)">vs</span> ${esc(m.visitante)}</p>
+      <small>${fmt(m.fecha,{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</small>
+    </div>`).join("");
+}
+
+/* ---------- Calendario completo ---------- */
+let JOR = 1;
+const iconoShare = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7"/><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/></svg>`;
+
+function pintarCalendario(){
+  const total = D.totalJornadas;
+  $("#jSel").innerHTML = Array.from({length:total},(_,i)=>{
+    const j=i+1, estado = j<=D.jugadas ? "jugada" : j===D.jugadas+1 ? "próxima" : "";
+    return `<option value="${j}" ${j===JOR?"selected":""}>Jornada ${j}${estado?" · "+estado:""}</option>`;
+  }).join("");
+  $("#jPrev").disabled = JOR<=1;
+  $("#jNext").disabled = JOR>=total;
+
+  const ps = D.partidos.filter(p=>p.jornada===JOR);
+  $("#calBody").innerHTML = ps.map((m,i)=>{
+    const jugado = m.gl!==null;
+    const e = jugado ? ETIQUETA[m.estado] : null;
+    return `<div class="cal__m">
+      <div class="cal__top">
+        <span class="a">${esc(m.local)}</span>
+        <span class="sc ${jugado&&(m.estado==="confirmado"||m.estado==="acta")?"":"sc--pend"}">${jugado?`${m.gl} – ${m.gv}`:"vs"}</span>
+        <span>${esc(m.visitante)}</span>
+      </div>
+      <div class="cal__bot">
+        ${jugado ? `<span class="tag tag--${e.c}">${e.c==="acta"?"Sellado":e.c==="ok"?"Confirmado":"Sin confirmar"}</span>`
+                 : `<small>${fmt(m.fecha,{weekday:"short",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</small>`}
+        <small>${esc(m.campo)}</small>
+        ${jugado ? `<button class="share" data-p="${JOR}-${i}">${iconoShare} Compartir</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+$("#jPrev").addEventListener("click",()=>{ if(JOR>1){JOR--;pintarCalendario();} });
+$("#jNext").addEventListener("click",()=>{ if(JOR<D.totalJornadas){JOR++;pintarCalendario();} });
+$("#jSel").addEventListener("change",e=>{ JOR=+e.target.value; pintarCalendario(); });
+$("#calBody").addEventListener("click",e=>{
+  const b=e.target.closest("[data-p]"); if(!b) return;
+  const [j,i]=b.dataset.p.split("-").map(Number);
+  abrirTarjeta(D.partidos.filter(p=>p.jornada===j)[i]);
+});
+
+/* ---------- Tarjeta compartible (canvas 1080x1080) ---------- */
+let PARTIDO = null;
+
+function texto(m){
+  const c=D.competicion;
+  return `${m.local} ${m.gl}-${m.gv} ${m.visitante}\nJornada ${m.jornada} · ${c.categoria} ${c.grupo}\nvía Albero · dato no oficial`;
+}
+
+function dibujar(m){
+  const cv=$("#lienzo"), g=cv.getContext("2d"), W=1080, H=1080;
+  const c=D.competicion;
+  const disp=(s,w)=>`${w} ${s}px "Big Shoulders Display",Impact,sans-serif`;
+  const mono=(s,w=500)=>`${w} ${s}px "IBM Plex Mono",monospace`;
+  const body=(s,w=700)=>`${w} ${s}px Manrope,system-ui,sans-serif`;
+
+  /* Fondo: césped de noche con foco arriba */
+  g.fillStyle="#0A130F"; g.fillRect(0,0,W,H);
+  const foco=g.createRadialGradient(W/2,-120,50,W/2,-120,900);
+  foco.addColorStop(0,"rgba(183,255,58,.20)"); foco.addColorStop(1,"rgba(183,255,58,0)");
+  g.fillStyle=foco; g.fillRect(0,0,W,H);
+
+  /* Franja de albero en diagonal */
+  g.save(); g.beginPath(); g.moveTo(W,0); g.lineTo(W,H); g.lineTo(W-330,H); g.lineTo(W-150,0); g.closePath();
+  const arena=g.createLinearGradient(W-330,0,W,H);
+  arena.addColorStop(0,"rgba(217,168,60,.16)"); arena.addColorStop(1,"rgba(217,168,60,0)");
+  g.fillStyle=arena; g.fill(); g.restore();
+
+  /* Líneas de campo abajo */
+  g.strokeStyle="rgba(255,255,255,.05)"; g.lineWidth=2;
+  for(let y=H-260;y<H;y+=46){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }
+
+  /* Cabecera */
+  g.fillStyle="#D9A83C"; g.font=mono(30,600); g.textAlign="left";
+  g.fillText(`JORNADA ${m.jornada}`.toUpperCase(),80,110);
+  g.fillStyle="#8DA396"; g.font=mono(26);
+  g.fillText(`${c.categoria} · ${c.grupo}`.toUpperCase(),80,158);
+
+  /* Marcador */
+  const cy=470;
+  g.textAlign="center"; g.fillStyle="#EEF3EA"; g.font=mono(190,600);
+  g.fillText(`${m.gl}`,W/2-150,cy+60);
+  g.fillText(`${m.gv}`,W/2+150,cy+60);
+  g.fillStyle="#24382E"; g.fillRect(W/2-3,cy-70,6,120);
+
+  /* Nombres, partidos en dos líneas si hacen falta */
+  const nombre=(t,x,yy)=>{
+    g.font=disp(58,800); g.fillStyle="#EEF3EA";
+    const ps=t.toUpperCase().split(" "); let l=[""],i=0;
+    ps.forEach(p=>{ const prueba=(l[i]?l[i]+" ":"")+p;
+      if(g.measureText(prueba).width>420 && l[i]){ i++; l[i]=p; } else l[i]=prueba; });
+    l.slice(0,2).forEach((ln,k)=>g.fillText(ln,x,yy+k*56));
+  };
+  nombre(m.local,W/2-260,cy+170);
+  nombre(m.visitante,W/2+260,cy+170);
+
+  /* Goleadores del partido, si hay */
+  const gol=D.goleadores.filter(x=>x.equipo===m.local||x.equipo===m.visitante).slice(0,3);
+  if(gol.length){
+    g.textAlign="left"; g.fillStyle="#D9A83C"; g.font=mono(24,600);
+    g.fillText("DESTACADOS",80,800);
+    gol.forEach((x,i)=>{
+      g.fillStyle="#EEF3EA"; g.font=body(30);
+      g.fillText(x.nombre,80,850+i*44);
+      g.fillStyle="#8DA396"; g.font=mono(24);
+      g.fillText(`${x.goles} goles en liga`,80+g.measureText(x.nombre).width+24,850+i*44);
+    });
+  }
+
+  /* Pie: marca y aviso de no oficial */
+  g.textAlign="left"; g.fillStyle="#B7FF3A"; g.font=disp(44,800);
+  g.fillText("ALBERO",80,H-78);
+  g.fillStyle="#5E7268"; g.font=mono(22);
+  g.fillText("Fútbol andaluz, dato a dato · dato no oficial",80,H-44);
+  const sello = m.estado==="acta" ? "SELLADO CON ACTA" : m.estado==="confirmado" ? "CONFIRMADO" : "SIN CONFIRMAR";
+  g.textAlign="right"; g.fillStyle = m.estado==="acta"||m.estado==="confirmado" ? "#B7FF3A" : "#8DA396";
+  g.font=mono(22,600); g.fillText(sello,W-80,H-78);
+}
+
+async function abrirTarjeta(m){
+  PARTIDO=m;
+  $("#mdMsg").textContent=""; $("#mdMsg").dataset.s="";
+  $("#modal").classList.add("is-open");
+  document.body.style.overflow="hidden";
+  if(document.fonts && document.fonts.ready) { try{ await document.fonts.ready; }catch(e){} }
+  dibujar(m);
+  $("#btnShare").focus();
+}
+function cerrarTarjeta(){ $("#modal").classList.remove("is-open"); document.body.style.overflow=""; }
+$$("[data-cerrar]").forEach(el=>el.addEventListener("click",cerrarTarjeta));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") cerrarTarjeta(); });
+
+const aBlob = () => new Promise(res=>$("#lienzo").toBlob(res,"image/png"));
+
+$("#btnShare").addEventListener("click",async()=>{
+  const m=$("#mdMsg");
+  try{
+    const blob=await aBlob();
+    const file=new File([blob],"partido.png",{type:"image/png"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],text:texto(PARTIDO)});
+      m.dataset.s="ok"; m.textContent="Compartido.";
+    }else{
+      descargar(blob);
+      m.dataset.s="ok"; m.textContent="Tu navegador no comparte imágenes: la hemos descargado.";
+    }
+  }catch(err){
+    if(err && err.name==="AbortError") return;
+    m.dataset.s="err"; m.textContent="No se ha podido compartir. Prueba a descargarla.";
+  }
+});
+function descargar(blob){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`${PARTIDO.local}-${PARTIDO.visitante}-j${PARTIDO.jornada}.png`.replace(/\s+/g,"_");
+  a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+$("#btnDown").addEventListener("click",async()=>{
+  descargar(await aBlob());
+  $("#mdMsg").dataset.s="ok"; $("#mdMsg").textContent="Imagen descargada.";
+});
+$("#btnCopy").addEventListener("click",async()=>{
+  const m=$("#mdMsg");
+  try{ await navigator.clipboard.writeText(texto(PARTIDO)); m.dataset.s="ok"; m.textContent="Texto copiado."; }
+  catch(e){ m.dataset.s="err"; m.textContent="El navegador no ha dejado copiar."; }
+});
+
+/* ---------- Ficha de equipo ---------- */
+function abrirEquipo(nombre){
+  const f = tabla(D,"general").find(x=>x.nombre===nombre);
+  const pos = tabla(D,"general").findIndex(x=>x.nombre===nombre)+1;
+  $("#drTeam").textContent = nombre;
+  $("#drSub").textContent = `${pos}º · ${D.competicion.categoria} ${D.competicion.grupo}`;
+  $("#drStats").innerHTML = `
+    <div><b class="num">${f.pt}</b><small>Puntos</small></div>
+    <div><b class="num">${f.gf}:${f.gc}</b><small>Goles</small></div>
+    <div><b class="num">${f.dg>0?"+":""}${f.dg}</b><small>Diferencia</small></div>`;
+
+  const suyos = D.partidos.filter(m=>m.local===nombre||m.visitante===nombre);
+  const jugados = suyos.filter(m=>m.gl!==null).slice(-5).reverse();
+  const futuros = suyos.filter(m=>m.gl===null).slice(0,3);
+  $("#drMatches").innerHTML = [...jugados,...futuros].map(m=>{
+    const jugado = m.gl!==null;
+    const local = m.local===nombre;
+    let res="";
+    if(jugado){
+      const nos = local?m.gl:m.gv, ellos = local?m.gv:m.gl;
+      const col = nos>ellos?"var(--win)":nos<ellos?"var(--loss)":"var(--draw)";
+      res = `<small style="color:${col}">${m.gl}:${m.gv}</small>`;
+    } else res = `<small>J${m.jornada} · ${fmt(m.fecha,{day:"2-digit",month:"short"})}</small>`;
+    return `<div class="fix__row">
+      <p style="font-size:.78rem">${local?"":"En "}${esc(local?m.visitante:m.local)}</p>
+      ${res}
+    </div>`;
+  }).join("") || `<p style="color:var(--mute);font-size:.82rem">Sin partidos registrados todavía.</p>`;
+
+  const g = D.goleadores.filter(x=>x.equipo===nombre);
+  $("#drScorers").innerHTML = g.length ? g.map((x,i)=>`
+    <div class="rank__row"><i>${i+1}</i><div><strong>${esc(x.nombre)}</strong></div><b class="num">${x.goles}</b></div>`).join("")
+    : `<p style="color:var(--mute);font-size:.82rem;padding:.3rem 0">Ningún jugador de este equipo entre los máximos goleadores del grupo.</p>`;
+
+  $("#drawer").classList.add("is-open");
+  document.body.style.overflow="hidden";
+  $("#drawer .x").focus();
+}
+function cerrarEquipo(){ $("#drawer").classList.remove("is-open"); document.body.style.overflow=""; }
+$$("[data-close]").forEach(el=>el.addEventListener("click",cerrarEquipo));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") cerrarEquipo(); });
+$("#tbBody").addEventListener("click",e=>{
+  const b = e.target.closest("[data-team]"); if(b) abrirEquipo(b.dataset.team);
+});
+
+/* ============================================================================
+   4. SELECTOR DE COMPETICIÓN
+   ============================================================================ */
+const uniq = a => [...new Set(a)];
+function pintarSelectores(){
+  const prov = uniq(CATALOGO.map(c=>c.provincia));
+  $("#selProv").innerHTML = prov.map(p=>`<option>${p}</option>`).join("");
+  if(prov.includes("Sevilla")) $("#selProv").value = "Sevilla";
+  refrescarCat();
+}
+function refrescarCat(){
+  const p = $("#selProv").value;
+  const cats = uniq(CATALOGO.filter(c=>c.provincia===p).map(c=>c.categoria));
+  $("#selCat").innerHTML = cats.map(c=>`<option>${c}</option>`).join("");
+  if(cats.includes("Tercera Andaluza")) $("#selCat").value = "Tercera Andaluza";
+  refrescarGrp();
+}
+function refrescarGrp(){
+  const p=$("#selProv").value, c=$("#selCat").value;
+  const gs = CATALOGO.filter(x=>x.provincia===p && x.categoria===c);
+  $("#selGrp").innerHTML = gs.map(g=>`<option value="${g.id}">${g.grupo}</option>`).join("");
+  cargar($("#selGrp").value);
+}
+$("#selProv").addEventListener("change",refrescarCat);
+$("#selCat").addEventListener("change",refrescarGrp);
+$("#selGrp").addEventListener("change",e=>cargar(e.target.value));
+
+/* Formulario: se rellena con los equipos de la competición cargada */
+function pintarFormulario(){
+  $("#fComp").innerHTML = CATALOGO.map(c=>
+    `<option value="${c.id}" ${c.id===D.id?"selected":""}>${c.categoria} ${c.grupo} · ${c.provincia}</option>`).join("");
+  const eq = tabla(D).map(e=>`<option>${esc(e.nombre)}</option>`).join("");
+  $("#fLocal").innerHTML = eq; $("#fVis").innerHTML = eq;
+  $("#fVis").selectedIndex = 1;
+}
+$("#sendForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const m=$("#fMsg"), gl=$("#fGl").value, gv=$("#fGv").value;
+  if($("#fLocal").value===$("#fVis").value){ m.dataset.s="err"; m.textContent="Un equipo no puede jugar contra sí mismo."; return; }
+  if(gl===""||gv===""){ m.dataset.s="err"; m.textContent="Faltan los goles de los dos equipos."; return; }
+  if(!$("#fName").value.trim()){ m.dataset.s="err"; m.textContent="Pon tu nombre: cada resultado queda a nombre de alguien."; return; }
+  // Envío real: fetch("/api/resultados",{method:"POST",body:JSON.stringify(...)})
+  m.dataset.s="ok";
+  m.textContent = `Recibido. Queda pendiente hasta que lo confirme el otro club.`;
+  $("#fGl").value=""; $("#fGv").value="";
+});
+
+/* ============================================================================
+   5. CARGA Y ARRANQUE
+   ============================================================================ */
+let revObs;
+function observar(){
+  revObs = revObs || new IntersectionObserver(es=>es.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add("in"); revObs.unobserve(e.target); }
+  }),{threshold:.08});
+  $$(".reveal:not(.in)").forEach(el=>revObs.observe(el));
+}
+
+async function cargar(id){
+  D = await cargarCompeticion(id);
+  MODO = "general";
+  JOR = D.jugadas;
+  $$(".tabs button").forEach((b,i)=>b.setAttribute("aria-selected", i===0));
+  pintarCabecera(); pintarTabla(); pintarJornada(); pintarGoleadores(); pintarProxima();
+  pintarCalendario(); pintarFormulario();
+  observar();
+}
+
+$$(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  $$(".tabs button").forEach(x=>x.setAttribute("aria-selected","false"));
+  b.setAttribute("aria-selected","true");
+  MODO = b.dataset.mode; pintarTabla();
+}));
+
+/* Las dos barras fijas cambian de alto al envolverse en móvil, así que se
+   mide su altura real y se publica como variable para el resto del CSS. */
+function medirBarras(){
+  const h = $(".top").offsetHeight + $(".picker").offsetHeight;
+  document.documentElement.style.setProperty("--bars", h + "px");
+  $(".picker").style.top = $(".top").offsetHeight + "px";
+}
+addEventListener("resize", medirBarras);
+addEventListener("load", medirBarras);
+medirBarras();
+
+$("#year").textContent = new Date().getFullYear();
+pintarSelectores();
+medirBarras();
+</script>
+</body>
+</html>

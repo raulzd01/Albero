@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C.D. Vega Alta · Tercera Andaluza Sevilla</title>
+<meta name="description" content="Web oficial del C.D. Vega Alta. Clasificación, resultados, plantilla y estadísticas de la Tercera Andaluza de Sevilla.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;800&family=IBM+Plex+Mono:wght@400;600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS
+   Paleta: "césped de noche + albero".
+   El albero es la arena amarilla de los campos y plazas de Sevilla:
+   lo usamos como acento cálido en vez de un dorado genérico.
+   ============================================================ */
+:root{
+  --pitch-900:#0A130F;   /* fondo base, negro con verde dentro */
+  --pitch-800:#101D17;   /* tarjetas */
+  --pitch-700:#16281F;   /* tarjetas elevadas */
+  --line:#24382E;        /* líneas de cal apagadas */
+  --neon:#B7FF3A;        /* focos del campo */
+  --albero:#D9A83C;      /* arena de albero */
+  --bone:#EEF3EA;        /* texto principal */
+  --mute:#8DA396;        /* texto secundario */
+  --win:#B7FF3A;
+  --draw:#8DA396;
+  --loss:#E4572E;
+
+  --display:"Big Shoulders Display",Impact,sans-serif;
+  --body:"Manrope",system-ui,sans-serif;
+  --data:"IBM Plex Mono",ui-monospace,monospace;
+
+  --pad:clamp(1rem,4vw,3.5rem);
+  --maxw:1180px;
+  --radius:4px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:78px}
+body{
+  margin:0;background:var(--pitch-900);color:var(--bone);
+  font-family:var(--body);font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--neon);outline-offset:3px}
+
+.wrap{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad)}
+
+/* Tipografía de titulares: condensada, alta, como un dorsal */
+h1,h2,h3,.display{
+  font-family:var(--display);font-weight:800;
+  text-transform:uppercase;letter-spacing:.01em;line-height:.92;margin:0;
+}
+h2{font-size:clamp(2.1rem,6vw,3.6rem)}
+h3{font-size:1.35rem;letter-spacing:.02em}
+
+.eyebrow{
+  font-family:var(--data);font-size:.68rem;font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--albero);
+  display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+
+.num{font-family:var(--data);font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+.nav{
+  position:fixed;inset:0 0 auto 0;z-index:60;
+  background:rgba(10,19,15,.82);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav__in{display:flex;align-items:center;gap:1rem;height:70px}
+.brand{display:flex;align-items:center;gap:.8rem;margin-right:auto}
+.crest{width:38px;height:44px;flex:none}
+.brand__txt{display:flex;flex-direction:column;line-height:1}
+.brand__name{font-family:var(--display);font-weight:800;font-size:1.18rem;text-transform:uppercase;letter-spacing:.04em}
+.brand__sub{font-family:var(--data);font-size:.58rem;letter-spacing:.18em;color:var(--mute);text-transform:uppercase;margin-top:.25rem}
+
+.menu{display:flex;gap:.35rem;align-items:center}
+.menu a{
+  font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  padding:.55rem .8rem;color:var(--mute);border-radius:var(--radius);transition:color .18s,background .18s;
+}
+.menu a:hover,.menu a.is-active{color:var(--bone);background:var(--pitch-700)}
+.menu .cta{background:var(--neon);color:#0A130F}
+.menu .cta:hover{background:#c9ff63;color:#0A130F}
+
+.burger{display:none;width:44px;height:44px;background:none;border:1px solid var(--line);border-radius:var(--radius);color:var(--bone);align-items:center;justify-content:center}
+.burger span{display:block;width:18px;height:2px;background:currentColor;position:relative}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0;width:18px;height:2px;background:currentColor}
+.burger span::before{top:-6px}.burger span::after{top:6px}
+
+@media(max-width:900px){
+  .burger{display:flex}
+  .menu{
+    position:fixed;top:70px;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;
+    background:var(--pitch-800);border-bottom:1px solid var(--line);
+    padding:.5rem var(--pad) 1.2rem;
+    transform:translateY(-120%);transition:transform .28s ease;
+  }
+  .menu.is-open{transform:translateY(0)}
+  .menu a{padding:.9rem .2rem;font-size:1rem;border-bottom:1px solid var(--line)}
+  .menu .cta{text-align:center;margin-top:.9rem;border:0}
+}
+
+/* ============================================================
+   HERO — el marcador es la portada
+   ============================================================ */
+.hero{position:relative;padding:calc(70px + 3.5rem) 0 4rem;overflow:hidden}
+.hero__bg{position:absolute;inset:0;z-index:0}
+/* Grada + césped + focos generados en CSS: nunca se rompe, pesa 0 KB.
+   Para usar foto real: .hero__bg{background:url(campo.jpg) center/cover} y baja la opacidad de .hero__grid */
+.hero__bg::before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(120% 80% at 50% -10%,rgba(183,255,58,.18),transparent 60%),
+    radial-gradient(60% 50% at 12% 8%,rgba(217,168,60,.14),transparent 70%),
+    linear-gradient(180deg,#0D1A14 0%,#0A130F 62%);
+}
+.hero__grid{
+  position:absolute;inset:auto 0 0 0;height:62%;
+  background-image:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 1px,transparent 1px 84px),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 1px,transparent 1px 52px);
+  mask-image:linear-gradient(to top,#000 0%,transparent 100%);
+  transform:perspective(420px) rotateX(58deg);transform-origin:bottom;
+}
+.hero__albero{
+  position:absolute;top:0;right:-8%;width:44%;height:100%;z-index:0;
+  background:linear-gradient(180deg,rgba(217,168,60,.13),transparent 70%);
+  clip-path:polygon(38% 0,100% 0,100% 100%,0 100%);
+}
+.hero__in{position:relative;z-index:1;display:grid;gap:2.5rem;grid-template-columns:1.05fr .95fr;align-items:end}
+@media(max-width:900px){.hero__in{grid-template-columns:1fr;gap:2rem}}
+
+.hero__tag{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-family:var(--data);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--neon);border:1px solid rgba(183,255,58,.35);border-radius:99px;padding:.35rem .8rem;
+}
+.hero h1{font-size:clamp(3.2rem,11vw,6.4rem);margin:1.2rem 0 .4rem}
+.hero h1 em{font-style:normal;color:var(--albero);display:block}
+.hero__lead{color:var(--mute);max-width:34ch;margin:0 0 1.8rem}
+.hero__btns{display:flex;flex-wrap:wrap;gap:.7rem}
+.btn{
+  display:inline-flex;align-items:center;gap:.5rem;padding:.85rem 1.4rem;border-radius:var(--radius);
+  font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.09em;
+  border:1px solid var(--neon);background:var(--neon);color:#0A130F;transition:transform .15s,background .18s;
+}
+.btn:hover{transform:translateY(-2px)}
+.btn--ghost{background:transparent;color:var(--bone);border-color:var(--line)}
+.btn--ghost:hover{border-color:var(--neon);color:var(--neon)}
+
+/* Marcador */
+.board{
+  background:linear-gradient(180deg,var(--pitch-800),rgba(16,29,23,.55));
+  border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:0 30px 60px -30px #000;
+}
+.board__hd{
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;
+  padding:.7rem 1.1rem;border-bottom:1px solid var(--line);
+  font-family:var(--data);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);
+}
+.board__hd b{color:var(--albero);font-weight:600}
+.board__body{padding:1.4rem 1.1rem}
+.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.8rem}
+.score__team{display:flex;flex-direction:column;align-items:center;gap:.6rem;text-align:center}
+.score__team span{font-family:var(--display);font-size:1rem;text-transform:uppercase;line-height:1;letter-spacing:.03em}
+.score__crest{width:46px;height:53px}
+.score__digits{font-family:var(--data);font-weight:600;font-size:clamp(2.4rem,9vw,3.4rem);letter-spacing:-.02em;color:var(--bone)}
+.score__digits small{color:var(--mute);margin:0 .2rem}
+.board__meta{
+  margin-top:1.2rem;padding-top:1rem;border-top:1px dashed var(--line);
+  font-family:var(--data);font-size:.7rem;color:var(--mute);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+}
+.board__meta a{color:var(--neon)}
+
+/* Cuenta atrás */
+.count{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-top:1rem}
+.count div{background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--radius);padding:.6rem .3rem;text-align:center}
+.count b{font-family:var(--data);font-weight:600;font-size:clamp(1.3rem,5vw,1.7rem);display:block;line-height:1}
+.count small{font-family:var(--data);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.count--live b{color:var(--neon)}
+
+/* ============================================================
+   SECCIONES
+   ============================================================ */
+.sec{padding:4.5rem 0;border-top:1px solid var(--line)}
+.sec__hd{display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;margin-bottom:2.2rem}
+.sec__hd p{color:var(--mute);max-width:46ch;margin:.7rem 0 0}
+
+/* Tabs */
+.tabs{display:flex;gap:.3rem;background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--radius);padding:.25rem}
+.tabs button{
+  background:none;border:0;color:var(--mute);padding:.5rem .9rem;border-radius:2px;
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;
+}
+.tabs button[aria-selected="true"]{background:var(--neon);color:#0A130F}
+
+.liga{display:grid;grid-template-columns:1.55fr 1fr;gap:1.5rem;align-items:start}
+@media(max-width:980px){.liga{grid-template-columns:1fr}}
+
+.panel{background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.panel__hd{padding:.9rem 1.1rem;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.panel__hd h3{font-size:1.05rem}
+.panel__hd span{font-family:var(--data);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.tabla{width:100%;border-collapse:collapse;min-width:640px}
+.tabla th,.tabla td{padding:.62rem .5rem;text-align:center;border-bottom:1px solid rgba(36,56,46,.6);white-space:nowrap}
+.tabla th{
+  font-family:var(--data);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);
+  font-weight:600;background:var(--pitch-700);position:sticky;top:0;
+}
+.tabla td{font-family:var(--data);font-size:.82rem;color:var(--mute)}
+.tabla .c-pos{width:38px}
+.tabla .c-team{text-align:left;position:sticky;left:0;background:var(--pitch-800);padding-left:1.1rem;min-width:190px;z-index:1}
+.tabla th.c-team{background:var(--pitch-700)}
+.tabla .team{display:flex;align-items:center;gap:.6rem;font-family:var(--body);font-size:.86rem;font-weight:700;color:var(--bone)}
+.tabla .team img,.tabla .team svg{width:22px;height:25px;flex:none}
+.tabla .c-pts{color:var(--bone);font-weight:600;font-size:.95rem}
+.tabla tr:hover td{background:rgba(22,40,31,.55)}
+.tabla tr:hover .c-team{background:var(--pitch-700)}
+.tabla tr.is-us .c-team{box-shadow:inset 3px 0 0 var(--neon)}
+.tabla tr.is-us td{background:rgba(183,255,58,.06)}
+.tabla tr.is-us .team{color:var(--neon)}
+.pos{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:2px;font-size:.7rem;font-weight:600}
+.pos--up{background:rgba(183,255,58,.16);color:var(--neon)}
+.pos--down{background:rgba(228,87,46,.16);color:var(--loss)}
+
+/* Racha: el detalle que la RFAF no da */
+.racha{display:inline-flex;gap:3px}
+.racha i{
+  width:16px;height:16px;border-radius:2px;font-style:normal;
+  font-family:var(--data);font-size:.58rem;font-weight:600;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.racha i[data-r="V"]{background:rgba(183,255,58,.18);color:var(--win)}
+.racha i[data-r="E"]{background:rgba(141,163,150,.18);color:var(--draw)}
+.racha i[data-r="D"]{background:rgba(228,87,46,.18);color:var(--loss)}
+
+.legend{display:flex;flex-wrap:wrap;gap:1rem;padding:.8rem 1.1rem;font-family:var(--data);font-size:.62rem;color:var(--mute);letter-spacing:.06em;border-top:1px solid var(--line)}
+.legend b{color:var(--bone);font-weight:600}
+
+/* Resultados */
+.res{display:flex;flex-direction:column}
+.res__row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.6rem;padding:.75rem 1.1rem;border-bottom:1px solid rgba(36,56,46,.6)}
+.res__row:last-child{border-bottom:0}
+.res__row span{font-size:.8rem;font-weight:700}
+.res__row .a{text-align:right}
+.res__row .b{text-align:left;color:var(--mute)}
+.res__sc{font-family:var(--data);font-size:.86rem;font-weight:600;background:var(--pitch-700);border:1px solid var(--line);border-radius:2px;padding:.2rem .5rem;min-width:52px;text-align:center}
+.res__sc.win{border-color:rgba(183,255,58,.4);color:var(--neon)}
+.res__sc.loss{border-color:rgba(228,87,46,.4);color:var(--loss)}
+
+/* Pichichi */
+.pich{display:flex;flex-direction:column}
+.pich__row{display:grid;grid-template-columns:24px 1fr auto;gap:.8rem;align-items:center;padding:.7rem 1.1rem;border-bottom:1px solid rgba(36,56,46,.6)}
+.pich__row:last-child{border-bottom:0}
+.pich__row i{font-style:normal;font-family:var(--data);font-size:.72rem;color:var(--albero)}
+.pich__row strong{font-size:.85rem;display:block}
+.pich__row small{color:var(--mute);font-size:.72rem}
+.pich__row b{font-family:var(--data);font-size:1.1rem;color:var(--neon)}
+
+/* ============================================================
+   PLANTILLA
+   ============================================================ */
+.squad{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:1rem}
+.player{
+  position:relative;background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;transition:transform .2s,border-color .2s;
+}
+.player:hover{transform:translateY(-4px);border-color:rgba(183,255,58,.45)}
+.player__ph{position:relative;aspect-ratio:4/5;background:linear-gradient(165deg,#1B3126,#0C1712)}
+.player__ph img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.06)}
+.player__ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,19,15,.92))}
+.player__no{
+  position:absolute;top:.6rem;right:.7rem;z-index:2;
+  font-family:var(--display);font-size:2.6rem;font-weight:800;line-height:1;
+  color:transparent;-webkit-text-stroke:1px rgba(238,243,234,.35);
+}
+.player__ini{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--display);font-size:3.4rem;font-weight:800;color:rgba(217,168,60,.28);letter-spacing:.04em;
+}
+.player__txt{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:.9rem 1rem}
+.player__pos{font-family:var(--data);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--neon);display:block;margin-bottom:.25rem}
+.player__name{font-family:var(--display);font-size:1.28rem;font-weight:800;text-transform:uppercase;line-height:.95}
+.player__stats{display:flex;gap:1rem;padding:.65rem 1rem;border-top:1px solid var(--line);font-family:var(--data);font-size:.66rem;color:var(--mute)}
+.player__stats b{color:var(--bone);font-weight:600}
+
+/* ============================================================
+   NOTICIAS
+   ============================================================ */
+.news{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+.card{
+  background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--radius);
+  padding:1.3rem;display:flex;flex-direction:column;gap:.7rem;transition:border-color .2s,transform .2s;
+}
+.card:hover{border-color:rgba(217,168,60,.5);transform:translateY(-3px)}
+.card time{font-family:var(--data);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--albero)}
+.card h3{font-size:1.15rem}
+.card p{margin:0;color:var(--mute);font-size:.88rem}
+.card__more{margin-top:auto;font-family:var(--data);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--neon)}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.foot{border-top:1px solid var(--line);background:#080F0C;padding-top:3.5rem}
+.foot__grid{display:grid;grid-template-columns:1.1fr .9fr;gap:3rem;padding-bottom:3rem}
+@media(max-width:900px){.foot__grid{grid-template-columns:1fr;gap:2.5rem}}
+.foot h2{font-size:clamp(1.8rem,5vw,2.6rem)}
+.foot p.lead{color:var(--mute);max-width:40ch}
+
+form{display:grid;gap:.8rem;margin-top:1.5rem}
+.field{display:flex;flex-direction:column;gap:.35rem}
+.field label{font-family:var(--data);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.field input,.field select{
+  background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--bone);padding:.75rem .85rem;font-family:var(--body);font-size:.92rem;
+}
+.field input:focus,.field select:focus{border-color:var(--neon);outline:none}
+.field--row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+@media(max-width:560px){.field--row{grid-template-columns:1fr}}
+.check{display:flex;gap:.6rem;align-items:flex-start;font-size:.78rem;color:var(--mute)}
+.check input{margin-top:.25rem;accent-color:var(--neon)}
+.form__msg{font-family:var(--data);font-size:.72rem;min-height:1.2em}
+.form__msg[data-state="ok"]{color:var(--neon)}
+.form__msg[data-state="err"]{color:var(--loss)}
+
+.foot__info{display:flex;flex-direction:column;gap:1.6rem}
+.foot__block h3{font-size:.95rem;letter-spacing:.1em;margin-bottom:.7rem}
+.foot__block p,.foot__block a{color:var(--mute);font-size:.88rem;margin:0}
+.foot__block a:hover{color:var(--neon)}
+.social{display:flex;gap:.5rem}
+.social a{
+  width:42px;height:42px;border:1px solid var(--line);border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;color:var(--mute);transition:.2s;
+}
+.social a:hover{border-color:var(--neon);color:var(--neon);transform:translateY(-2px)}
+.social svg{width:19px;height:19px}
+
+.foot__bar{
+  border-top:1px solid var(--line);padding:1.3rem 0;
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  font-family:var(--data);font-size:.66rem;color:var(--mute);letter-spacing:.04em;
+}
+.foot__bar a:hover{color:var(--bone)}
+
+/* Reveal al hacer scroll */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.reveal.is-in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================ NAV ============================ -->
+<header class="nav">
+  <div class="wrap nav__in">
+    <a class="brand" href="#inicio" aria-label="C.D. Vega Alta, inicio">
+      <svg class="crest" viewBox="0 0 38 44" aria-hidden="true">
+        <path d="M19 1 36 7v18c0 9-7.6 15.4-17 18C9.6 40.4 2 34 2 25V7z" fill="#101D17" stroke="#D9A83C" stroke-width="1.6"/>
+        <path d="M19 6.5 31.5 11v13.5c0 6.6-5.6 11.4-12.5 13.5C12.1 35.9 6.5 31.1 6.5 24.5V11z" fill="none" stroke="#24382E"/>
+        <path d="M11 27c3-9 5.5-13 8-16 2.5 3 5 7 8 16" fill="none" stroke="#B7FF3A" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="19" cy="30" r="2.6" fill="#B7FF3A"/>
+      </svg>
+      <span class="brand__txt">
+        <span class="brand__name">C.D. Vega Alta</span>
+        <span class="brand__sub">Fundado en 1974</span>
+      </span>
+    </a>
+
+    <button class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu"><span></span></button>
+
+    <nav class="menu" id="menu">
+      <a href="#inicio" class="is-active">Inicio</a>
+      <a href="#partidos">Partidos</a>
+      <a href="#plantilla">Plantilla</a>
+      <a href="#noticias">Noticias</a>
+      <a href="#contacto">Contacto</a>
+      <a href="#penya" class="cta">Hazte socio</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============================ HERO ============================ -->
+<main id="inicio">
+<section class="hero">
+  <div class="hero__bg"><div class="hero__grid"></div></div>
+  <div class="hero__albero"></div>
+
+  <div class="wrap hero__in">
+    <div>
+      <span class="hero__tag" id="tagJornada">Jornada 12 · Tercera Andaluza Sevilla</span>
+      <h1>Aquí se<br>juega de <em>verdad</em></h1>
+      <p class="hero__lead">Grupo 6 de la Tercera Andaluza. Once pueblos, un balón y un campo de albero a las cuatro de la tarde.</p>
+      <div class="hero__btns">
+        <a class="btn" href="#partidos">Ver clasificación</a>
+        <a class="btn btn--ghost" href="#penya">Hazte socio</a>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="board__hd">
+        <span>Último partido · <b id="lastComp">Jornada 11</b></span>
+        <span id="lastDate">—</span>
+      </div>
+      <div class="board__body">
+        <div class="score" id="lastScore"><!-- JS --></div>
+        <div class="board__meta">
+          <span id="lastVenue">—</span>
+          <a href="#partidos">Acta y goleadores →</a>
+        </div>
+      </div>
+      <div class="board__hd" style="border-top:1px solid var(--line);border-bottom:0">
+        <span>Próximo partido</span>
+        <span id="nextInfo">—</span>
+      </div>
+      <div class="board__body" style="padding-top:.4rem">
+        <div class="score" id="nextTeams"><!-- JS --></div>
+        <div class="count" id="count" aria-live="polite">
+          <div><b class="num" data-c="d">--</b><small>Días</small></div>
+          <div><b class="num" data-c="h">--</b><small>Horas</small></div>
+          <div><b class="num" data-c="m">--</b><small>Min</small></div>
+          <div><b class="num" data-c="s">--</b><small>Seg</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CLASIFICACIÓN + RESULTADOS ==================== -->
+<section class="sec" id="partidos">
+  <div class="wrap">
+    <div class="sec__hd reveal">
+      <div>
+        <span class="eyebrow">Competición</span>
+        <h2>Clasificación<br>y resultados</h2>
+        <p>Tabla, racha de las cinco últimas jornadas y goleadores del grupo. Se actualiza cada lunes tras el cierre de actas.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Tipo de clasificación">
+        <button role="tab" aria-selected="true" data-mode="general">General</button>
+        <button role="tab" aria-selected="false" data-mode="casa">En casa</button>
+        <button role="tab" aria-selected="false" data-mode="fuera">Fuera</button>
+      </div>
+    </div>
+
+    <div class="liga">
+      <div class="panel reveal">
+        <div class="panel__hd">
+          <h3 id="tablaTitulo">Clasificación general</h3>
+          <span id="tablaJor">—</span>
+        </div>
+        <div class="tscroll">
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th class="c-pos">#</th>
+                <th class="c-team">Equipo</th>
+                <th>PT</th><th>PJ</th><th>G</th><th>E</th><th>P</th>
+                <th>GF</th><th>GC</th><th>DG</th>
+                <th>Racha</th>
+              </tr>
+            </thead>
+            <tbody id="tablaBody"><!-- JS --></tbody>
+          </table>
+        </div>
+        <div class="legend">
+          <span><b>Ascenso directo</b> 1º</span>
+          <span><b>Promoción</b> 2º–4º</span>
+          <span><b>Descenso</b> 15º–16º</span>
+          <span><b>Racha</b> últimas 5 jornadas, la más reciente a la derecha</span>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:1.5rem">
+        <div class="panel reveal">
+          <div class="panel__hd"><h3>Última jornada</h3><span id="resJor">—</span></div>
+          <div class="res" id="resBody"><!-- JS --></div>
+        </div>
+        <div class="panel reveal">
+          <div class="panel__hd"><h3>Pichichi del grupo</h3><span>Goles</span></div>
+          <div class="pich" id="pichBody"><!-- JS --></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PLANTILLA ============================ -->
+<section class="sec" id="plantilla">
+  <div class="wrap">
+    <div class="sec__hd reveal">
+      <div>
+        <span class="eyebrow">Primer equipo</span>
+        <h2>La plantilla</h2>
+        <p>Veintidós fichas, dieciséis de la cantera. Los minutos y los goles salen del acta arbitral de cada jornada.</p>
+      </div>
+      <a class="btn btn--ghost" href="#contacto">Ficha técnica completa</a>
+    </div>
+    <div class="squad" id="squad"><!-- JS --></div>
+  </div>
+</section>
+
+<!-- ============================ NOTICIAS ============================ -->
+<section class="sec" id="noticias">
+  <div class="wrap">
+    <div class="sec__hd reveal">
+      <div>
+        <span class="eyebrow">Actualidad</span>
+        <h2>Noticias</h2>
+        <p>Lo que pasa en el club, contado por el club.</p>
+      </div>
+      <a class="btn btn--ghost" href="#noticias">Ver todas</a>
+    </div>
+    <div class="news" id="news"><!-- JS --></div>
+  </div>
+</section>
+</main>
+
+<!-- ============================ FOOTER ============================ -->
+<footer class="foot" id="contacto">
+  <div class="wrap foot__grid">
+    <div id="penya" class="reveal">
+      <span class="eyebrow">Peña del club</span>
+      <h2>Súmate a la grada de albero</h2>
+      <p class="lead">30 € la temporada: entrada a todos los partidos en casa, camiseta de la peña y el autobús a los desplazamientos a mitad de precio.</p>
+
+      <form id="socioForm" novalidate>
+        <div class="field--row">
+          <div class="field">
+            <label for="nombre">Nombre y apellidos</label>
+            <input id="nombre" name="nombre" type="text" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="email">Correo electrónico</label>
+            <input id="email" name="email" type="email" autocomplete="email" required>
+          </div>
+        </div>
+        <div class="field--row">
+          <div class="field">
+            <label for="tel">Teléfono</label>
+            <input id="tel" name="tel" type="tel" autocomplete="tel" inputmode="tel">
+          </div>
+          <div class="field">
+            <label for="tipo">Tipo de carné</label>
+            <select id="tipo" name="tipo">
+              <option>Adulto · 30 €</option>
+              <option>Menor de 16 · 12 €</option>
+              <option>Familiar · 70 €</option>
+              <option>Colaborador · desde 100 €</option>
+            </select>
+          </div>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="rgpd" required>
+          <span>Acepto que el club use mis datos para gestionar el carné y avisarme de los partidos.</span>
+        </label>
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <button class="btn" type="submit">Enviar solicitud</button>
+          <p class="form__msg" id="formMsg" role="status"></p>
+        </div>
+      </form>
+    </div>
+
+    <div class="foot__info reveal">
+      <div class="foot__block">
+        <h3>El campo</h3>
+        <p>Campo Municipal El Olivar<br>Camino de la Vega, s/n · Sevilla</p>
+        <p style="margin-top:.5rem"><a href="https://maps.google.com" target="_blank" rel="noopener">Cómo llegar →</a></p>
+      </div>
+      <div class="foot__block">
+        <h3>Contacto</h3>
+        <p><a href="mailto:club@cdvegaalta.es">club@cdvegaalta.es</a></p>
+        <p><a href="tel:+34600000000">600 00 00 00</a></p>
+        <p style="margin-top:.5rem">Oficina: martes y jueves, 18:00–20:30</p>
+      </div>
+      <div class="foot__block">
+        <h3>Síguenos</h3>
+        <div class="social">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 3h3l-6.6 7.6L21.7 21h-5.4l-4.2-5.5L7 21H4l7-8L2.7 3h5.5l3.9 5.2z"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7h2.6l.4-3h-3V9.2c0-.9.3-1.5 1.6-1.5H17V5.1c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1V11H8v3h2.6v7z"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18 5 12 5 12 5s-6 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 9 2 12 2 12s0 3 .4 4.8c.2.9.9 1.6 1.8 1.8C6 19 12 19 12 19s6 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.8.4-4.8.4-4.8s0-3-.4-4.8M10 15.2V8.8l5.2 3.2z"/></svg></a>
+          <a href="#" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2m0 2a8 8 0 1 1-4.2 14.8l-.4-.2-2.6.7.7-2.5-.3-.4A8 8 0 0 1 12 4m-3.3 4c-.2 0-.5.1-.7.4-.3.3-.7.8-.7 1.6s.6 1.7.7 1.8c.1.2 1.2 2.1 3.1 2.9 1.6.7 2 .6 2.3.6.5 0 1.2-.4 1.4-.9.2-.5.2-.9.1-1l-.3-.2-1.3-.6c-.2-.1-.4 0-.5.1l-.5.6c-.1.1-.3.2-.5.1-.2-.1-.8-.3-1.5-.9-.6-.6-.9-1-1-1.3 0-.2 0-.3.1-.4l.4-.4c.1-.2.1-.3 0-.5l-.5-1.3c-.1-.3-.3-.3-.4-.3z"/></svg></a>
+        </div>
+      </div>
+      <div class="foot__block">
+        <h3>Datos de la competición</h3>
+        <p style="font-family:var(--data);font-size:.72rem;line-height:1.7">
+          Clasificación y resultados calculados sobre las actas de la RFAF.<br>
+          Última actualización: <span id="dataStamp">—</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap foot__bar">
+    <span>© <span id="year">2026</span> Club Deportivo Vega Alta · Todos los derechos reservados</span>
+    <span><a href="#">Aviso legal</a> · <a href="#">Privacidad</a> · <a href="#">Cookies</a></span>
+  </div>
+</footer>
+
+<script>
+/* ============================================================================
+   1. CAPA DE DATOS
+   Todo lo que se pinta en la web sale de este objeto. Para conectar una fuente
+   real solo hay que sustituir cargarDatos() por una llamada a tu API y devolver
+   el mismo formato (ver el adaptador de ejemplo más abajo).
+   Los datos de aquí son de muestra: nombres de equipo y jugadores inventados.
+   ============================================================================ */
+const CLUB = "C.D. Vega Alta";
+
+const DEMO = {
+  actualizado: "2026-07-27T09:30:00+02:00",
+  competicion: { nombre: "Tercera Andaluza Sevilla", grupo: "Grupo 6", jornada: 12 },
+
+  /* PT, PJ y DG se calculan, nunca se escriben a mano: así la tabla no se
+     contradice consigo misma cuando cambias un resultado. */
+  clasificacion: [
+    { equipo:"Vega Alta",        pg:8, pe:2, pp:1, gf:26, gc:11, casa:[5,1,0,15,5],  fuera:[3,1,1,11,6],  racha:"VVEVD" },
+    { equipo:"Olivar C.F.",      pg:8, pe:1, pp:2, gf:24, gc:13, casa:[5,0,1,14,6],  fuera:[3,1,1,10,7],  racha:"VDVVV" },
+    { equipo:"Ribera del Sur",   pg:7, pe:3, pp:1, gf:21, gc:10, casa:[4,2,0,12,4],  fuera:[3,1,1,9,6],   racha:"EVVEV" },
+    { equipo:"Los Alcores C.D.", pg:7, pe:2, pp:2, gf:22, gc:14, casa:[4,1,1,13,6],  fuera:[3,1,1,9,8],   racha:"VVDVE" },
+    { equipo:"Atlético Marisma", pg:6, pe:3, pp:2, gf:19, gc:13, casa:[4,1,1,11,5],  fuera:[2,2,1,8,8],   racha:"EEVVD" },
+    { equipo:"Puente Nuevo",     pg:5, pe:4, pp:2, gf:18, gc:15, casa:[3,2,1,10,7],  fuera:[2,2,1,8,8],   racha:"VEEDV" },
+    { equipo:"Cerro del Águila", pg:5, pe:3, pp:3, gf:17, gc:16, casa:[3,2,1,10,7],  fuera:[2,1,2,7,9],   racha:"DVEVD" },
+    { equipo:"Molino Viejo",     pg:5, pe:2, pp:4, gf:16, gc:16, casa:[3,1,2,9,7],   fuera:[2,1,2,7,9],   racha:"VDDVV" },
+    { equipo:"Dehesa C.F.",      pg:4, pe:4, pp:3, gf:15, gc:16, casa:[3,2,1,9,6],   fuera:[1,2,2,6,10],  racha:"EEDVE" },
+    { equipo:"Naranjos C.D.",    pg:4, pe:2, pp:5, gf:14, gc:18, casa:[3,1,2,9,8],   fuera:[1,1,3,5,10],  racha:"DVDED" },
+    { equipo:"Torre Blanca",     pg:3, pe:4, pp:4, gf:13, gc:17, casa:[2,2,2,8,8],   fuera:[1,2,2,5,9],   racha:"EDVED" },
+    { equipo:"Guadaíra F.C.",    pg:3, pe:3, pp:5, gf:12, gc:19, casa:[2,2,2,8,8],   fuera:[1,1,3,4,11],  racha:"DDEVD" },
+    { equipo:"Trianilla C.D.",   pg:3, pe:2, pp:6, gf:12, gc:21, casa:[2,1,3,8,9],   fuera:[1,1,3,4,12],  racha:"DVDDE" },
+    { equipo:"Corta de Alcalá",  pg:2, pe:4, pp:5, gf:11, gc:20, casa:[2,2,2,7,8],   fuera:[0,2,3,4,12],  racha:"EDDED" },
+    { equipo:"Pinares Unión",    pg:2, pe:2, pp:7, gf:10, gc:24, casa:[1,1,4,6,11],  fuera:[1,1,3,4,13],  racha:"DDDVD" },
+    { equipo:"Estrella Sur",     pg:1, pe:1, pp:9, gf:8,  gc:28, casa:[1,1,4,5,13],  fuera:[0,0,5,3,15],  racha:"DDDDD" }
+  ],
+
+  ultimoPartido: {
+    jornada:11, fecha:"2026-07-19T17:00:00+02:00", campo:"Campo Municipal El Olivar",
+    local:"Vega Alta", visitante:"Torre Blanca", golesLocal:3, golesVisitante:1
+  },
+  proximoPartido: {
+    jornada:12, fecha:"2026-08-02T20:00:00+02:00", campo:"Ciudad Deportiva La Marisma",
+    local:"Atlético Marisma", visitante:"Vega Alta"
+  },
+
+  resultados: [
+    { jornada:11, local:"Vega Alta",        visitante:"Torre Blanca",     gl:3, gv:1 },
+    { jornada:11, local:"Olivar C.F.",      visitante:"Estrella Sur",     gl:4, gv:0 },
+    { jornada:11, local:"Ribera del Sur",   visitante:"Puente Nuevo",     gl:2, gv:2 },
+    { jornada:11, local:"Los Alcores C.D.", visitante:"Naranjos C.D.",    gl:2, gv:0 },
+    { jornada:11, local:"Molino Viejo",     visitante:"Atlético Marisma", gl:1, gv:0 },
+    { jornada:11, local:"Dehesa C.F.",      visitante:"Cerro del Águila", gl:1, gv:1 },
+    { jornada:11, local:"Guadaíra F.C.",    visitante:"Trianilla C.D.",   gl:0, gv:2 },
+    { jornada:11, local:"Pinares Unión",    visitante:"Corta de Alcalá",  gl:1, gv:1 }
+  ],
+
+  goleadores: [
+    { nombre:"Álvaro Ruiz",     equipo:"Vega Alta",      goles:11 },
+    { nombre:"Iván Perea",      equipo:"Olivar C.F.",    goles:9  },
+    { nombre:"Mohamed Diarra",  equipo:"Los Alcores",    goles:8  },
+    { nombre:"Curro Domínguez", equipo:"Ribera del Sur", goles:7  },
+    { nombre:"Jesús Manzano",   equipo:"Vega Alta",      goles:6  }
+  ],
+
+  plantilla: [
+    { dorsal:1,  nombre:"Diego Salas",     pos:"Portero",     pj:12, min:1080, goles:0,  foto:null },
+    { dorsal:4,  nombre:"Rafa Cordero",    pos:"Central",     pj:12, min:1055, goles:2,  foto:null },
+    { dorsal:5,  nombre:"Álex Buendía",    pos:"Central",     pj:11, min:990,  goles:1,  foto:null },
+    { dorsal:2,  nombre:"Juanma Ortega",   pos:"Lateral",     pj:12, min:940,  goles:0,  foto:null },
+    { dorsal:6,  nombre:"Pablo Nieto",     pos:"Pivote",      pj:12, min:1010, goles:1,  foto:null },
+    { dorsal:8,  nombre:"Adrián Vela",     pos:"Interior",    pj:11, min:870,  goles:4,  foto:null },
+    { dorsal:10, nombre:"Jesús Manzano",   pos:"Mediapunta",  pj:12, min:1020, goles:6,  foto:null },
+    { dorsal:9,  nombre:"Álvaro Ruiz",     pos:"Delantero",   pj:12, min:1035, goles:11, foto:null }
+  ],
+
+  noticias: [
+    { fecha:"2026-07-20", titulo:"El Vega Alta se pone líder en El Olivar", texto:"Tres goles en veinte minutos de segunda parte y la primera vez que el equipo duerme primero desde 2019." },
+    { fecha:"2026-07-16", titulo:"Abierta la campaña de socios 2026/27", texto:"Renovaciones hasta el 15 de agosto en la oficina del campo y por transferencia. Los carnés se recogen el día del primer partido." },
+    { fecha:"2026-07-11", titulo:"El juvenil sube a División de Honor", texto:"Ascenso matemático a dos jornadas del final y catorce jugadores del filial con ficha del primer equipo." }
+  ]
+};
+
+/* ----------------------------------------------------------------------------
+   2. ADAPTADORES
+   La web nunca habla con la fuente directamente: habla con cargarDatos().
+   Cambia el cuerpo de esta función y el resto del código sigue funcionando.
+   ---------------------------------------------------------------------------- */
+async function cargarDatos(){
+  // return normalizarDesdeApi(await (await fetch("/api/competicion/22725")).json());
+  return DEMO;
+}
+
+/* Ejemplo de normalización: pasa una respuesta cualquiera al formato de arriba.
+   Ajusta los nombres de campo a los de tu API o a los de tu tabla en base de datos. */
+function normalizarDesdeApi(raw){
+  return {
+    actualizado: raw.updated_at,
+    competicion: { nombre: raw.competition.name, grupo: raw.competition.group, jornada: raw.competition.round },
+    clasificacion: raw.standings.map(f => ({
+      equipo: f.team_name,
+      pg: f.won, pe: f.drawn, pp: f.lost, gf: f.goals_for, gc: f.goals_against,
+      casa:  [f.home_w, f.home_d, f.home_l, f.home_gf, f.home_ga],
+      fuera: [f.away_w, f.away_d, f.away_l, f.away_gf, f.away_ga],
+      racha: (f.form || "").slice(-5)
+    })),
+    ultimoPartido: raw.last_match, proximoPartido: raw.next_match,
+    resultados: raw.results, goleadores: raw.top_scorers,
+    plantilla: raw.squad, noticias: raw.news
+  };
+}
+
+/* ============================================================================
+   3. RENDER
+   ============================================================================ */
+const $  = (s,c=document)=>c.querySelector(s);
+const $$ = (s,c=document)=>[...c.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const escudo = n => `<svg viewBox="0 0 22 25" aria-hidden="true"><path d="M11 1l9.3 3.3V15c0 5.2-4.2 8.9-9.3 10C5.9 23.9 1.7 20.2 1.7 15V4.3z" fill="#16281F" stroke="${n===CLUB.replace("C.D. ","")?"#B7FF3A":"#3A5347"}" stroke-width="1.3"/><text x="11" y="16" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" font-weight="600" fill="${n===CLUB.replace("C.D. ","")?"#B7FF3A":"#8DA396"}">${esc(n.trim()[0])}</text></svg>`;
+
+const NOSOTROS = "Vega Alta";
+const fmt = (iso,opts) => new Intl.DateTimeFormat("es-ES",opts).format(new Date(iso));
+
+/* --- Clasificación. modo: general | casa | fuera --- */
+function filas(datos, modo){
+  return datos.clasificacion.map(f=>{
+    let pg=f.pg, pe=f.pe, pp=f.pp, gf=f.gf, gc=f.gc;
+    if(modo!=="general"){ [pg,pe,pp,gf,gc] = f[modo]; }
+    return { equipo:f.equipo, racha:f.racha, pg, pe, pp, gf, gc,
+             pj:pg+pe+pp, pt:pg*3+pe, dg:gf-gc };
+  }).sort((a,b)=> b.pt-a.pt || b.dg-a.dg || b.gf-a.gf || a.equipo.localeCompare(b.equipo,"es"));
+}
+
+function pintarTabla(datos, modo="general"){
+  const rows = filas(datos, modo), total = rows.length;
+  $("#tablaBody").innerHTML = rows.map((f,i)=>{
+    const p = i+1;
+    const cls = p===1 ? "pos--up" : p<=4 ? "pos--up" : p>total-2 ? "pos--down" : "";
+    return `<tr class="${f.equipo===NOSOTROS?"is-us":""}">
+      <td class="c-pos"><span class="pos ${cls}">${p}</span></td>
+      <td class="c-team"><span class="team">${escudo(f.equipo)}${esc(f.equipo)}</span></td>
+      <td class="c-pts">${f.pt}</td>
+      <td>${f.pj}</td><td>${f.pg}</td><td>${f.pe}</td><td>${f.pp}</td>
+      <td>${f.gf}</td><td>${f.gc}</td>
+      <td>${f.dg>0?"+":""}${f.dg}</td>
+      <td><span class="racha">${[...f.racha].map(r=>`<i data-r="${r}" title="${({V:"Victoria",E:"Empate",D:"Derrota"})[r]}">${r}</i>`).join("")}</span></td>
+    </tr>`;
+  }).join("");
+
+  $("#tablaTitulo").textContent =
+    modo==="general" ? "Clasificación general" : modo==="casa" ? "Solo partidos en casa" : "Solo partidos fuera";
+}
+
+/* --- Marcador del último partido y del próximo --- */
+function pintarMarcador(d){
+  const u = d.ultimoPartido, n = d.proximoPartido;
+
+  $("#lastComp").textContent = "Jornada " + u.jornada;
+  $("#lastDate").textContent = fmt(u.fecha,{day:"2-digit",month:"short"}).replace(".","");
+  $("#lastVenue").textContent = u.campo;
+  $("#lastScore").innerHTML = `
+    <div class="score__team"><span class="score__crest">${escudo(u.local)}</span><span>${esc(u.local)}</span></div>
+    <div class="score__digits num">${u.golesLocal}<small>–</small>${u.golesVisitante}</div>
+    <div class="score__team"><span class="score__crest">${escudo(u.visitante)}</span><span>${esc(u.visitante)}</span></div>`;
+  $$("#lastScore .score__crest svg").forEach(s=>{s.setAttribute("width","46");s.setAttribute("height","53")});
+
+  $("#nextInfo").textContent = fmt(n.fecha,{weekday:"short",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+  $("#nextTeams").innerHTML = `
+    <div class="score__team"><span>${esc(n.local)}</span></div>
+    <div class="score__digits num" style="font-size:1.1rem;color:var(--albero)">VS</div>
+    <div class="score__team"><span>${esc(n.visitante)}</span></div>`;
+  $("#tagJornada").textContent = `Jornada ${d.competicion.jornada} · ${d.competicion.nombre} · ${d.competicion.grupo}`;
+  $("#tablaJor").textContent = `Tras la jornada ${u.jornada}`;
+  $("#resJor").textContent = `Jornada ${u.jornada}`;
+  $("#dataStamp").textContent = fmt(d.actualizado,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+
+  cuentaAtras(n.fecha);
+}
+
+/* --- Cuenta atrás --- */
+let tick;
+function cuentaAtras(iso){
+  const destino = new Date(iso).getTime();
+  const set = (k,v)=>$(`[data-c="${k}"]`).textContent = String(v).padStart(2,"0");
+  clearInterval(tick);
+  (function paso(){
+    const dif = destino - Date.now();
+    if(dif<=0){
+      $("#count").classList.add("count--live");
+      ["d","h","m","s"].forEach(k=>set(k,0));
+      $("#count").innerHTML = `<div style="grid-column:1/-1"><b class="num">EN JUEGO</b><small>Sigue el minuto a minuto</small></div>`;
+      clearInterval(tick); return;
+    }
+    const s = Math.floor(dif/1000);
+    set("d",Math.floor(s/86400)); set("h",Math.floor(s%86400/3600));
+    set("m",Math.floor(s%3600/60)); set("s",s%60);
+  })();
+  tick = setInterval(()=>{
+    const dif = destino - Date.now();
+    if(dif<=0){ cuentaAtras(iso); return; }
+    const s = Math.floor(dif/1000);
+    set("d",Math.floor(s/86400)); set("h",Math.floor(s%86400/3600));
+    set("m",Math.floor(s%3600/60)); set("s",s%60);
+  },1000);
+}
+
+/* --- Resultados de la jornada --- */
+function pintarResultados(d){
+  $("#resBody").innerHTML = d.resultados.map(r=>{
+    const nuestro = r.local===NOSOTROS || r.visitante===NOSOTROS;
+    let estado = "";
+    if(nuestro){
+      const nos = r.local===NOSOTROS ? r.gl : r.gv, ellos = r.local===NOSOTROS ? r.gv : r.gl;
+      estado = nos>ellos ? "win" : nos<ellos ? "loss" : "";
+    }
+    return `<div class="res__row">
+      <span class="a" style="${r.local===NOSOTROS?"color:var(--neon)":""}">${esc(r.local)}</span>
+      <span class="res__sc ${estado}">${r.gl} – ${r.gv}</span>
+      <span class="b" style="${r.visitante===NOSOTROS?"color:var(--neon)":""}">${esc(r.visitante)}</span>
+    </div>`;
+  }).join("");
+}
+
+/* --- Goleadores --- */
+function pintarPichichi(d){
+  $("#pichBody").innerHTML = d.goleadores.map((g,i)=>`
+    <div class="pich__row">
+      <i>${String(i+1).padStart(2,"0")}</i>
+      <div><strong>${esc(g.nombre)}</strong><small>${esc(g.equipo)}</small></div>
+      <b class="num">${g.goles}</b>
+    </div>`).join("");
+}
+
+/* --- Plantilla --- */
+function pintarPlantilla(d){
+  $("#squad").innerHTML = d.plantilla.map(j=>{
+    const ini = j.nombre.split(" ").map(p=>p[0]).slice(0,2).join("");
+    const media = j.pj ? Math.round(j.min/j.pj) : 0;
+    return `<article class="player reveal">
+      <div class="player__ph">
+        ${j.foto ? `<img src="${esc(j.foto)}" alt="${esc(j.nombre)}" loading="lazy">`
+                 : `<span class="player__ini">${esc(ini)}</span>`}
+        <span class="player__no num">${j.dorsal}</span>
+        <div class="player__txt">
+          <span class="player__pos">${esc(j.pos)}</span>
+          <span class="player__name">${esc(j.nombre)}</span>
+        </div>
+      </div>
+      <div class="player__stats">
+        <span>PJ <b>${j.pj}</b></span><span>Goles <b>${j.goles}</b></span><span>Min/PJ <b>${media}</b></span>
+      </div>
+    </article>`;
+  }).join("");
+  observar();
+}
+
+/* --- Noticias --- */
+function pintarNoticias(d){
+  $("#news").innerHTML = d.noticias.map(n=>`
+    <a class="card reveal" href="#noticias">
+      <time datetime="${n.fecha}">${fmt(n.fecha,{day:"2-digit",month:"long",year:"numeric"})}</time>
+      <h3>${esc(n.titulo)}</h3>
+      <p>${esc(n.texto)}</p>
+      <span class="card__more">Leer la crónica →</span>
+    </a>`).join("");
+  observar();
+}
+
+/* ============================================================================
+   4. INTERFAZ
+   ============================================================================ */
+const burger = $("#burger"), menu = $("#menu");
+burger.addEventListener("click",()=>{
+  const abierto = menu.classList.toggle("is-open");
+  burger.setAttribute("aria-expanded",abierto);
+  burger.setAttribute("aria-label",abierto?"Cerrar menú":"Abrir menú");
+});
+$$("#menu a").forEach(a=>a.addEventListener("click",()=>{
+  menu.classList.remove("is-open"); burger.setAttribute("aria-expanded","false");
+}));
+
+/* Enlace activo según la sección visible */
+const secciones = $$("main section[id], footer[id]");
+const navObs = new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    $$("#menu a").forEach(a=>a.classList.toggle("is-active", a.getAttribute("href")==="#"+e.target.id));
+  }});
+},{rootMargin:"-45% 0px -50% 0px"});
+secciones.forEach(s=>navObs.observe(s));
+
+/* Reveal */
+let revObs;
+function observar(){
+  revObs = revObs || new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("is-in"); revObs.unobserve(e.target); } });
+  },{threshold:.12});
+  $$(".reveal:not(.is-in)").forEach(el=>revObs.observe(el));
+}
+
+/* Formulario de la peña */
+$("#socioForm").addEventListener("submit",ev=>{
+  ev.preventDefault();
+  const msg = $("#formMsg"), nombre = $("#nombre"), email = $("#email"), rgpd = $("#rgpd");
+  if(!nombre.value.trim()){ msg.dataset.state="err"; msg.textContent="Falta el nombre."; nombre.focus(); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email.value)){ msg.dataset.state="err"; msg.textContent="Ese correo no es válido."; email.focus(); return; }
+  if(!rgpd.checked){ msg.dataset.state="err"; msg.textContent="Marca la casilla para poder tramitar el carné."; rgpd.focus(); return; }
+  // Aquí va el envío real: fetch("/api/socios",{method:"POST",body:new FormData(ev.target)})
+  msg.dataset.state="ok";
+  msg.textContent = `Solicitud enviada. Te escribimos a ${email.value} esta semana.`;
+  ev.target.reset();
+});
+
+/* Tabs de clasificación */
+let DATOS = null;
+$$(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  $$(".tabs button").forEach(x=>x.setAttribute("aria-selected","false"));
+  b.setAttribute("aria-selected","true");
+  pintarTabla(DATOS, b.dataset.mode);
+}));
+
+$("#year").textContent = new Date().getFullYear();
+
+/* ============================================================================
+   5. ARRANQUE
+   ============================================================================ */
+(async function init(){
+  DATOS = await cargarDatos();
+  pintarMarcador(DATOS);
+  pintarTabla(DATOS,"general");
+  pintarResultados(DATOS);
+  pintarPichichi(DATOS);
+  pintarPlantilla(DATOS);
+  pintarNoticias(DATOS);
+  observar();
+})();
+</script>
+</body>
+</html>
