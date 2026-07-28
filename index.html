@@ -924,13 +924,34 @@ $("#calBody").addEventListener("click",e=>{
 
 /* ---------- Tarjeta compartible (canvas 1080x1080) ---------- */
 let PARTIDO = null;
+const CACHE_ESC = {};
+
+/* Devuelve una imagen lista para el lienzo: el escudo real si lo hay, y si no
+   el generado. Un escudo que no carga no debe dejar la tarjeta a medias. */
+function cargarEscudo(nombre){
+  if(CACHE_ESC[nombre]) return CACHE_ESC[nombre];
+  const url = EQUIPOS[nombre]?.escudo;
+  const generado = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(escudoSvg(nombre,120,140));
+  CACHE_ESC[nombre] = new Promise(res=>{
+    const img = new Image();
+    img.onload = ()=>res({img, externo:!!url});
+    img.onerror = ()=>{
+      const alt = new Image();
+      alt.onload = ()=>res({img:alt, externo:false});
+      alt.onerror = ()=>res(null);
+      alt.src = generado;
+    };
+    img.src = url || generado;
+  });
+  return CACHE_ESC[nombre];
+}
 
 function texto(m){
   const c=D.competicion;
   return `${m.local} ${m.gl}-${m.gv} ${m.visitante}\nJornada ${m.jornada} · ${c.categoria} ${c.grupo}\nvía Albero · dato no oficial`;
 }
 
-function dibujar(m){
+function dibujar(m, escudos={}){
   const cv=$("#lienzo"), g=cv.getContext("2d"), W=1080, H=1080;
   const c=D.competicion;
   const disp=(s,w)=>`${w} ${s}px "Big Shoulders Display",Impact,sans-serif`;
@@ -959,8 +980,17 @@ function dibujar(m){
   g.fillStyle="#8DA396"; g.font=mono(26);
   g.fillText(`${c.categoria} · ${c.grupo}`.toUpperCase(),80,158);
 
+  /* Escudos, encajados en un cuadro de 150 sin deformarlos */
+  const caja=150, cyEsc=270;
+  [[m.local,W/2-260],[m.visitante,W/2+260]].forEach(([nombre,cx])=>{
+    const e=escudos[nombre]; if(!e||!e.img) return;
+    const iw=e.img.naturalWidth||120, ih=e.img.naturalHeight||140;
+    const k=Math.min(caja/iw, caja/ih), w=iw*k, h=ih*k;
+    g.drawImage(e.img, cx-w/2, cyEsc-h/2, w, h);
+  });
+
   /* Marcador */
-  const cy=470;
+  const cy=520;
   g.textAlign="center"; g.fillStyle="#EEF3EA"; g.font=mono(190,600);
   g.fillText(`${m.gl}`,W/2-150,cy+60);
   g.fillText(`${m.gv}`,W/2+150,cy+60);
@@ -977,17 +1007,38 @@ function dibujar(m){
   nombre(m.local,W/2-260,cy+170);
   nombre(m.visitante,W/2+260,cy+170);
 
-  /* Goleadores del partido, si hay */
+  /* Debajo: goleadores si los hay; si no, cómo quedan los dos en la tabla.
+     Antes esta zona se quedaba vacía cuando no había datos de goleadores. */
   const gol=D.goleadores.filter(x=>x.equipo===m.local||x.equipo===m.visitante).slice(0,3);
+  g.textAlign="left";
   if(gol.length){
-    g.textAlign="left"; g.fillStyle="#D9A83C"; g.font=mono(24,600);
-    g.fillText("DESTACADOS",80,800);
+    g.fillStyle="#D9A83C"; g.font=mono(24,600);
+    g.fillText("DESTACADOS",80,790);
     gol.forEach((x,i)=>{
       g.fillStyle="#EEF3EA"; g.font=body(30);
-      g.fillText(x.nombre,80,850+i*44);
+      g.fillText(x.nombre,80,840+i*44);
       g.fillStyle="#8DA396"; g.font=mono(24);
-      g.fillText(`${x.goles} goles en liga`,80+g.measureText(x.nombre).width+24,850+i*44);
+      g.fillText(`${x.goles} goles en liga`,80+g.measureText(x.nombre).width+24,840+i*44);
     });
+  }else{
+    const cl=tabla(D);
+    const fila=n=>{ const i=cl.findIndex(f=>f.nombre===n); return i<0?null:{pos:i+1,...cl[i]}; };
+    g.fillStyle="#D9A83C"; g.font=mono(24,600);
+    g.fillText("CÓMO VAN EN LA TABLA",80,790);
+    [m.local,m.visitante].forEach((n,i)=>{
+      const f=fila(n); if(!f) return;
+      const y=840+i*46;
+      g.fillStyle="#D9A83C"; g.font=mono(30,600);
+      g.fillText(`${f.pos}º`,80,y);
+      g.fillStyle="#EEF3EA"; g.font=body(30);
+      g.fillText(n,150,y);
+      g.fillStyle="#8DA396"; g.font=mono(24);
+      g.fillText(`${f.pt} pt · ${f.gf}:${f.gc}`,150+g.measureText(n).width+24,y);
+    });
+    if(m.campo){
+      g.fillStyle="#5E7268"; g.font=mono(22);
+      g.fillText(m.campo,80,940);
+    }
   }
 
   /* Pie: marca y aviso de no oficial */
@@ -1006,7 +1057,22 @@ async function abrirTarjeta(m){
   $("#modal").classList.add("is-open");
   document.body.style.overflow="hidden";
   if(document.fonts && document.fonts.ready) { try{ await document.fonts.ready; }catch(e){} }
-  dibujar(m);
+
+  const [a,b] = await Promise.all([cargarEscudo(m.local), cargarEscudo(m.visitante)]);
+  const escudos = {[m.local]:a, [m.visitante]:b};
+  dibujar(m, escudos);
+
+  /* Abriendo el archivo con doble clic (file://) una imagen externa bloquea el
+     lienzo y no se podría exportar. Si pasa, se repinta sin escudos externos. */
+  try{
+    $("#lienzo").getContext("2d").getImageData(0,0,1,1);
+  }catch(e){
+    const limpio = {};
+    for(const [k,v] of Object.entries(escudos)) if(v && !v.externo) limpio[k]=v;
+    dibujar(m, limpio);
+    $("#mdMsg").dataset.s=""; 
+    $("#mdMsg").textContent="Sin escudos: para que salgan, abre la web desde su dirección y no desde el archivo.";
+  }
   $("#btnShare").focus();
 }
 function cerrarTarjeta(){ $("#modal").classList.remove("is-open"); document.body.style.overflow=""; }

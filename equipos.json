@@ -1,7 +1,13 @@
 {
   "C.D. Carrión": {
+    "escudo": "escudos/carrion.png",
     "localidad": "Carrión de los Céspedes",
     "campo": "Campo Municipal de Carrión de los Céspedes",
+    "colores": [
+      "#111111",
+      "#C4161C",
+      "#D4A02A"
+    ],
     "web": ""
   },
   "_ejemplo · borra esta entrada": {
