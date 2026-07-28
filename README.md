@@ -10,6 +10,7 @@ Web independiente. Datos no oficiales.
 |---|---|
 | `index.html` | El portal: selector de competición, clasificación, jornada, calendario, goleadores y tarjeta compartible |
 | `club.html` | Plantilla de web de club, por si algún club la quiere |
+| `panel.html` | Panel de administración: generar calendario, cargar jornadas, aprobar peticiones y exportar `datos.json` |
 | `aviso-legal.html` | Aviso legal, privacidad y supresión de datos |
 
 Sin dependencias, sin compilación, sin servidor. Tres archivos estáticos.
@@ -37,19 +38,32 @@ Marca **Enforce HTTPS** cuando GitHub te deje (tarda un rato en emitir el certif
 - [ ] Cambiar los correos de ejemplo `hola@albero.example` y `datos@albero.example` por los reales.
 - [ ] Poner la fecha de última actualización del aviso legal.
 - [ ] Revisar que el aviso de "datos no oficiales" del pie del portal sigue visible.
+- [ ] Poner tu WhatsApp o tu correo en la constante `CONTACTO` de `index.html`, para que el formulario público te llegue.
 
-## Conectar los datos reales
+## Cómo se actualizan los datos
 
-Todo el portal lee de una sola función, `cargarCompeticion(id)`, al principio del `<script>` de `index.html`:
+El portal busca un `datos.json` en la raíz. Si lo encuentra, lo usa; si no, enseña datos de muestra en lugar de salir en blanco. Ese archivo lo produce el panel.
 
-```js
-async function cargarCompeticion(id){
-  // const res = await fetch(`/api/competiciones/${id}`); return normalizar(await res.json());
-  return construir(CATALOGO.find(c=>c.id===id));
-}
-```
+Circuito de cada jornada:
 
-Descomenta el `fetch`, apúntalo a tu API y devuelve este formato:
+1. Abre `panel.html` (en local o en tu web, da igual).
+2. Pestaña **Resultados**: carga los marcadores de la jornada. También puedes pegar el texto de un WhatsApp.
+3. Pestaña **Peticiones**: las que te hayan llegado de fuera. **Nada se publica sin que le des a aprobar.**
+4. Pestaña **Publicar**: descarga `datos.json` y súbelo al repositorio.
+
+La primera vez, empieza por la pestaña **Competición** para generar el calendario a partir de la lista de equipos, mientras la RFAF no publique el oficial.
+
+### Por qué el panel puede estar a la vista
+
+`panel.html` no tiene contraseña y no le hace falta: no guarda nada en ningún servidor. Quien lo abra podrá teclear en su navegador, pero para que algo salga en la web hay que subir `datos.json` al repositorio, y eso exige tu cuenta de GitHub. El control de acceso es el commit.
+
+## Conectar una API
+
+Cuando tengas licencia de datos, sustituye el `fetch("datos.json")` de `buscarDatosReales()` por la llamada a tu endpoint. El resto del portal no cambia.
+
+**Importante:** la clave de la API no puede ir en el JavaScript, porque cualquiera la ve en el inspector aunque el repo sea privado. Hace falta un intermediario (una Cloudflare Worker o una función de Netlify, gratis las dos) que guarde la clave y llame por ti.
+
+El formato que espera el portal:
 
 ```js
 {

@@ -411,10 +411,10 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
           <div><h4>El delegado lo envía</h4><p>Al acabar el partido, el delegado de cualquiera de los dos equipos manda el resultado y los goleadores desde el móvil.</p></div>
         </div>
         <div class="step">
-          <div><h4>Se cruza con el otro club</h4><p>Cuando los dos clubes coinciden, el resultado pasa a confirmado. Si no coinciden, queda en discrepancia y no se publica como firme.</p></div>
+          <div><h4>Lo revisamos antes de publicarlo</h4><p>Ninguna petición entra sola. Se revisa una a una, y solo se publica si el partido existe en el calendario y el resultado es verosímil.</p></div>
         </div>
         <div class="step">
-          <div><h4>Se coteja con el acta</h4><p>Al cerrarse el acta arbitral se contrasta y el partido queda sellado. Ahí es cuando la clasificación se considera definitiva.</p></div>
+          <div><h4>Se cruza y se sella</h4><p>Si los dos clubes coinciden pasa a confirmado; si no, queda en discrepancia. Al cerrarse el acta arbitral se contrasta y el partido queda sellado.</p></div>
         </div>
         <div class="step">
           <div><h4>La tabla se recalcula sola</h4><p>Los puntos nunca se escriben a mano: salen de los resultados. Así la clasificación no puede contradecir a los partidos.</p></div>
@@ -424,7 +424,7 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
 
     <div class="form reveal" id="enviar">
       <h3>Enviar un resultado</h3>
-      <p>Para delegados y colaboradores. Tarda menos de un minuto y queda a tu nombre.</p>
+      <p>Para delegados y colaboradores. Tarda menos de un minuto, queda a tu nombre y lo revisamos antes de publicarlo.</p>
       <form id="sendForm" novalidate>
         <div class="f">
           <label for="fComp">Competición</label>
@@ -448,7 +448,7 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
           <label for="fName">Tu nombre</label>
           <input id="fName" type="text" autocomplete="name">
         </div>
-        <button class="btn" type="submit">Enviar resultado</button>
+        <button class="btn" type="submit">Enviar para revisión</button>
         <p class="msg" id="fMsg" role="status"></p>
       </form>
     </div>
@@ -532,6 +532,11 @@ tbody tr:hover .c-team{background:var(--pitch-700)}
    cuerpo por tu API (BeSoccer, tu propio backend) manteniendo el formato.
    Los datos de aquí son de muestra y los nombres son inventados.
    ============================================================================ */
+
+/* Rellena esto con tus datos reales antes de publicar.
+   whatsapp: prefijo del país sin el signo +, por ejemplo "34600112233".
+   Si lo dejas vacío, el formulario usa el correo. */
+const CONTACTO = { whatsapp:"", email:"datos@albero.example" };
 
 /* Catálogo de competiciones. En producción sale de un endpoint /competiciones. */
 const CATALOGO = [
@@ -617,9 +622,27 @@ function construir(comp){
   };
 }
 
-/* Punto único de conexión. Cambia solo este cuerpo. */
+/* ----------------------------------------------------------------------------
+   PUNTO ÚNICO DE CONEXIÓN
+   Orden de preferencia:
+   1. datos.json en la raíz, que es lo que exporta el panel.
+   2. Si no existe, datos de muestra, para que la web nunca salga en blanco.
+   Cuando tengas API, sustituye el fetch por la llamada a tu endpoint.
+   ---------------------------------------------------------------------------- */
+let REAL = null;          /* contenido de datos.json, si lo hay */
+
+async function buscarDatosReales(){
+  try{
+    const res = await fetch("datos.json",{cache:"no-store"});
+    if(!res.ok) return null;
+    const d = await res.json();
+    if(!d || !Array.isArray(d.partidos) || !d.partidos.length) return null;
+    return d;
+  }catch(e){ return null; }   /* sin archivo o sin conexión: seguimos con la muestra */
+}
+
 async function cargarCompeticion(id){
-  // const res = await fetch(`/api/competiciones/${id}`); return normalizar(await res.json());
+  if(REAL && REAL.id===id) return REAL;
   return construir(CATALOGO.find(c=>c.id===id));
 }
 
@@ -959,14 +982,14 @@ const uniq = a => [...new Set(a)];
 function pintarSelectores(){
   const prov = uniq(CATALOGO.map(c=>c.provincia));
   $("#selProv").innerHTML = prov.map(p=>`<option>${p}</option>`).join("");
-  if(prov.includes("Sevilla")) $("#selProv").value = "Sevilla";
+  if(!REAL && prov.includes("Sevilla")) $("#selProv").value = "Sevilla";
   refrescarCat();
 }
 function refrescarCat(){
   const p = $("#selProv").value;
   const cats = uniq(CATALOGO.filter(c=>c.provincia===p).map(c=>c.categoria));
   $("#selCat").innerHTML = cats.map(c=>`<option>${c}</option>`).join("");
-  if(cats.includes("Tercera Andaluza")) $("#selCat").value = "Tercera Andaluza";
+  if(!REAL && cats.includes("Tercera Andaluza")) $("#selCat").value = "Tercera Andaluza";
   refrescarGrp();
 }
 function refrescarGrp(){
@@ -993,9 +1016,21 @@ $("#sendForm").addEventListener("submit",e=>{
   if($("#fLocal").value===$("#fVis").value){ m.dataset.s="err"; m.textContent="Un equipo no puede jugar contra sí mismo."; return; }
   if(gl===""||gv===""){ m.dataset.s="err"; m.textContent="Faltan los goles de los dos equipos."; return; }
   if(!$("#fName").value.trim()){ m.dataset.s="err"; m.textContent="Pon tu nombre: cada resultado queda a nombre de alguien."; return; }
-  // Envío real: fetch("/api/resultados",{method:"POST",body:JSON.stringify(...)})
+  /* Sin servidor todavía, así que la petición se envía por WhatsApp o por
+     correo con el formato que el panel sabe leer. Cuando haya backend, esto
+     se cambia por un fetch a /api/resultados. */
+  const comp = $("#fComp").selectedOptions[0].textContent;
+  const linea = `${$("#fName").value.trim()}: ${$("#fLocal").value} ${gl}-${gv} ${$("#fVis").value}`;
+  const cuerpo = `${linea}\n${comp}\n${$("#fRole").value}`;
+
+  if(CONTACTO.whatsapp){
+    window.open(`https://wa.me/${CONTACTO.whatsapp}?text=${encodeURIComponent(cuerpo)}`,"_blank","noopener");
+  }else{
+    window.location.href = `mailto:${CONTACTO.email}`
+      + `?subject=${encodeURIComponent("Resultado · "+comp)}&body=${encodeURIComponent(cuerpo)}`;
+  }
   m.dataset.s="ok";
-  m.textContent = `Recibido. Queda pendiente hasta que lo confirme el otro club.`;
+  m.textContent = "Se abre el mensaje ya escrito. Envíalo y lo revisamos antes de publicarlo.";
   $("#fGl").value=""; $("#fGv").value="";
 });
 
@@ -1038,8 +1073,19 @@ addEventListener("load", medirBarras);
 medirBarras();
 
 $("#year").textContent = new Date().getFullYear();
-pintarSelectores();
-medirBarras();
+
+(async function arrancar(){
+  REAL = await buscarDatosReales();
+  if(REAL){
+    /* Hay datos publicados: el selector muestra solo lo que existe de verdad */
+    const c = REAL.competicion;
+    CATALOGO.length = 0;
+    CATALOGO.push({ id:REAL.id, provincia:c.provincia, categoria:c.categoria, grupo:c.grupo,
+                    equipos:c.equipos, asc:c.asc, pro:c.pro, des:c.des });
+  }
+  pintarSelectores();
+  medirBarras();
+})();
 </script>
 </body>
 </html>

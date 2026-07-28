@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel · Albero</title>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pitch-900:#0A130F;--pitch-850:#0D1712;--pitch-800:#101D17;--pitch-700:#16281F;
+  --line:#24382E;--line-soft:rgba(36,56,46,.55);
+  --neon:#B7FF3A;--albero:#D9A83C;--bone:#EEF3EA;--mute:#8DA396;--mute-dim:#5E7268;
+  --win:#B7FF3A;--loss:#E4572E;
+  --display:"Big Shoulders Display",Impact,sans-serif;
+  --body:"Manrope",system-ui,sans-serif;
+  --data:"IBM Plex Mono",ui-monospace,monospace;
+  --r:4px;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--pitch-900);color:var(--bone);font-family:var(--body);font-size:15px;line-height:1.5}
+a{color:var(--neon)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;line-height:.95;margin:0;font-weight:800}
+.wrap{max-width:1120px;margin-inline:auto;padding-inline:clamp(.8rem,3vw,2rem)}
+.num{font-family:var(--data);font-variant-numeric:tabular-nums}
+.mono{font-family:var(--data)}
+
+/* Cabecera */
+.top{border-bottom:1px solid var(--line);background:var(--pitch-850);position:sticky;top:0;z-index:20}
+.top__in{display:flex;align-items:center;gap:1rem;padding-block:.85rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:.6rem;margin-right:auto}
+.brand svg{width:26px;height:30px}
+.brand b{font-family:var(--display);font-size:1.2rem;letter-spacing:.06em;text-transform:uppercase}
+.brand span{font-family:var(--data);font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;color:var(--albero);border:1px solid var(--line);border-radius:99px;padding:.15rem .5rem;margin-left:.3rem}
+.estado{font-family:var(--data);font-size:.64rem;color:var(--mute);display:flex;align-items:center;gap:.4rem}
+.pt{width:7px;height:7px;border-radius:50%;background:var(--albero)}
+.pt.ok{background:var(--neon)}
+
+/* Pestañas */
+.nav{display:flex;gap:.25rem;border-bottom:1px solid var(--line);background:var(--pitch-850);overflow-x:auto}
+.nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--mute);padding:.75rem .9rem;font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.nav button[aria-selected="true"]{color:var(--bone);border-bottom-color:var(--neon)}
+.nav button:hover{color:var(--bone)}
+.nav .badge{display:inline-block;background:var(--albero);color:#0A130F;font-family:var(--data);font-size:.6rem;border-radius:99px;padding:0 .35rem;margin-left:.35rem}
+
+main{padding:1.6rem 0 5rem}
+.vista{display:none}
+.vista.on{display:block}
+.head{margin-bottom:1.2rem}
+.head h2{font-size:1.7rem}
+.head p{margin:.45rem 0 0;color:var(--mute);font-size:.88rem;max-width:60ch}
+
+.card{background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--r);margin-bottom:1rem}
+.card__hd{padding:.75rem .95rem;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.card__hd h3{font-size:1rem}
+.card__hd .meta{font-family:var(--data);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-left:auto}
+.card__bd{padding:.95rem}
+
+.f{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.8rem}
+.f label{font-family:var(--data);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--mute)}
+.f input,.f select,.f textarea{background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--r);color:var(--bone);padding:.55rem .65rem;font-size:.88rem;width:100%;min-width:0}
+.f textarea{font-family:var(--data);font-size:.8rem;line-height:1.6;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--neon);outline:none}
+.f small{color:var(--mute-dim);font-size:.72rem}
+.row{display:grid;gap:.7rem}
+.row-2{grid-template-columns:1fr 1fr}
+.row-3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:660px){.row-2,.row-3{grid-template-columns:1fr}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.6rem 1rem;border-radius:var(--r);font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;border:1px solid var(--neon);background:var(--neon);color:#0A130F}
+.btn:hover{filter:brightness(1.08)}
+.btn--g{background:transparent;color:var(--bone);border-color:var(--line)}
+.btn--g:hover{border-color:var(--neon);color:var(--neon)}
+.btn--d{background:transparent;color:var(--loss);border-color:rgba(228,87,46,.4)}
+.btn--d:hover{border-color:var(--loss)}
+.btn--s{padding:.4rem .65rem;font-size:.66rem}
+.btns{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+
+.msg{font-family:var(--data);font-size:.72rem;min-height:1.2em;margin:.5rem 0 0;color:var(--mute)}
+.msg[data-s="ok"]{color:var(--neon)}
+.msg[data-s="err"]{color:var(--loss)}
+.aviso{border:1px solid var(--line);border-left:2px solid var(--albero);background:var(--pitch-850);border-radius:var(--r);padding:.8rem .9rem;margin-bottom:1rem}
+.aviso p{margin:0;font-size:.82rem;color:var(--mute)}
+.aviso strong{color:var(--bone)}
+
+/* Rejilla de carga de resultados */
+.jgrid{display:grid;gap:.4rem}
+.jrow{display:grid;grid-template-columns:1fr 54px 12px 54px 1fr 132px;gap:.5rem;align-items:center;padding:.45rem .6rem;background:var(--pitch-850);border:1px solid var(--line-soft);border-radius:var(--r)}
+.jrow.hecho{border-color:rgba(183,255,58,.28)}
+.jrow>span{font-size:.83rem;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jrow .r{text-align:right}
+.jrow .g{text-align:center;color:var(--mute-dim);font-family:var(--data)}
+.jrow input{background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--r);color:var(--bone);padding:.4rem;text-align:center;font-family:var(--data);font-size:.9rem;width:100%}
+.jrow input:focus{border-color:var(--neon);outline:none}
+.jrow select{background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--r);color:var(--mute);padding:.35rem;font-family:var(--data);font-size:.62rem;width:100%}
+@media(max-width:720px){
+  .jrow{grid-template-columns:1fr 46px 10px 46px 1fr;row-gap:.4rem}
+  .jrow select{grid-column:1/-1}
+}
+.jnav{display:flex;align-items:center;gap:.35rem}
+.jnav button{background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--r);color:var(--bone);width:28px;height:28px;line-height:1}
+.jnav button:disabled{opacity:.35;cursor:not-allowed}
+.jnav select{background:var(--pitch-700);border:1px solid var(--line);border-radius:var(--r);color:var(--bone);padding:.3rem .5rem;font-family:var(--data);font-size:.7rem}
+
+/* Cola de moderación */
+.cola{display:grid;gap:.6rem}
+.item{background:var(--pitch-850);border:1px solid var(--line);border-radius:var(--r);padding:.8rem .9rem}
+.item.dup{border-left:2px solid var(--loss)}
+.item.nuevo{border-left:2px solid var(--neon)}
+.item__t{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;margin-bottom:.35rem}
+.item__t b{font-size:.95rem}
+.item__t .sc{font-family:var(--data);font-weight:600;background:var(--pitch-700);border:1px solid var(--line);border-radius:2px;padding:.1rem .45rem}
+.item__m{font-family:var(--data);font-size:.64rem;color:var(--mute-dim);margin-bottom:.55rem}
+.item__m b{color:var(--albero);font-weight:500}
+.crudo{font-family:var(--data);font-size:.68rem;color:var(--mute-dim);background:var(--pitch-900);border:1px solid var(--line-soft);border-radius:2px;padding:.3rem .45rem;margin-bottom:.5rem;overflow-wrap:anywhere}
+.tag{font-family:var(--data);font-size:.56rem;letter-spacing:.09em;text-transform:uppercase;padding:.15rem .45rem;border-radius:2px;border:1px solid}
+.tag--n{color:var(--neon);border-color:rgba(183,255,58,.35)}
+.tag--d{color:var(--loss);border-color:rgba(228,87,46,.4)}
+.tag--x{color:var(--mute);border-color:var(--line)}
+.vacio{padding:2rem .9rem;text-align:center;color:var(--mute)}
+.vacio p{margin:.3rem 0 0;font-size:.85rem}
+
+table{width:100%;border-collapse:collapse}
+th,td{padding:.45rem .5rem;text-align:center;border-bottom:1px solid var(--line-soft);font-family:var(--data);font-size:.78rem}
+th{font-size:.58rem;letter-spacing:.11em;text-transform:uppercase;color:var(--mute);background:var(--pitch-700)}
+td.eq{text-align:left;font-family:var(--body);font-weight:600;font-size:.83rem;color:var(--bone)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.5rem;margin-bottom:1rem}
+.kpi{background:var(--pitch-800);border:1px solid var(--line);border-radius:var(--r);padding:.6rem .7rem}
+.kpi b{font-family:var(--data);font-size:1.35rem;display:block;line-height:1}
+.kpi small{font-family:var(--data);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top__in">
+    <span class="brand">
+      <svg viewBox="0 0 30 34" aria-hidden="true">
+        <path d="M15 1l13.5 4.8V19c0 7-6 11.9-13.5 14C7.5 30.9 1.5 26 1.5 19V5.8z" fill="#101D17" stroke="#D9A83C" stroke-width="1.4"/>
+        <path d="M8.5 22c2.4-7.2 4.4-10.4 6.5-13 2.1 2.6 4.1 5.8 6.5 13" fill="none" stroke="#B7FF3A" stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+      <b>Albero</b><span>Panel</span>
+    </span>
+    <span class="estado"><i class="pt" id="pt"></i><span id="estado">Sin cambios</span></span>
+    <a class="btn btn--g btn--s" href="index.html">Ver el portal</a>
+  </div>
+</header>
+
+<nav class="nav wrap" role="tablist">
+  <button role="tab" aria-selected="true" data-v="comp">1 · Competición</button>
+  <button role="tab" aria-selected="false" data-v="res">2 · Resultados</button>
+  <button role="tab" aria-selected="false" data-v="cola">3 · Peticiones<span class="badge" id="badge" hidden>0</span></button>
+  <button role="tab" aria-selected="false" data-v="pub">4 · Publicar</button>
+</nav>
+
+<main class="wrap">
+
+  <!-- ============ 1. COMPETICIÓN ============ -->
+  <section class="vista on" id="v-comp">
+    <div class="head">
+      <h2>Montar la competición</h2>
+      <p>Mientras la RFAF no publique el calendario oficial, lo generas aquí con la lista de equipos. El sorteo usa el método del círculo: ida y vuelta, todos contra todos, sin que nadie juegue dos veces en casa seguidas.</p>
+    </div>
+
+    <div class="card">
+      <div class="card__hd"><h3>Datos del grupo</h3></div>
+      <div class="card__bd">
+        <div class="row row-3">
+          <div class="f"><label for="cProv">Provincia</label><input id="cProv" value="Sevilla"></div>
+          <div class="f"><label for="cCat">Categoría</label><input id="cCat" value="Tercera Andaluza"></div>
+          <div class="f"><label for="cGrp">Grupo</label><input id="cGrp" value="Grupo 6"></div>
+        </div>
+        <div class="row row-3">
+          <div class="f"><label for="cAsc">Plazas de ascenso</label><input id="cAsc" type="number" min="0" max="6" value="1"></div>
+          <div class="f"><label for="cPro">Hasta qué puesto promociona</label><input id="cPro" type="number" min="0" max="8" value="3"></div>
+          <div class="f"><label for="cDes">Plazas de descenso</label><input id="cDes" type="number" min="0" max="6" value="2"></div>
+        </div>
+        <div class="f">
+          <label for="cEquipos">Equipos, uno por línea</label>
+          <textarea id="cEquipos" rows="9" spellcheck="false"></textarea>
+          <small>Debe ser un número par. Si son impares, el sorteo deja a uno descansando cada jornada.</small>
+        </div>
+        <div class="row row-2">
+          <div class="f"><label for="cInicio">Primera jornada</label><input id="cInicio" type="date"></div>
+          <div class="f"><label for="cHora">Hora habitual</label><input id="cHora" type="time" value="17:00"></div>
+        </div>
+        <div class="btns">
+          <button class="btn" id="bGen">Generar calendario</button>
+          <button class="btn btn--g" id="bDemo">Rellenar con un ejemplo</button>
+        </div>
+        <p class="msg" id="mComp" role="status"></p>
+      </div>
+    </div>
+
+    <div class="card" id="cResumen" hidden>
+      <div class="card__hd"><h3>Calendario generado</h3><span class="meta" id="resumenMeta"></span></div>
+      <div class="card__bd"><div class="kpis" id="resumenKpis"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 2. RESULTADOS ============ -->
+  <section class="vista" id="v-res">
+    <div class="head">
+      <h2>Cargar una jornada</h2>
+      <p>Ocho partidos son cinco minutos. Deja en blanco lo que no se haya jugado. El estado de cada partido es lo que el portal enseña al público, así que no marques nada como sellado si no has visto el acta.</p>
+    </div>
+
+    <div class="card">
+      <div class="card__hd">
+        <h3>Jornada</h3>
+        <div class="jnav">
+          <button id="rPrev" aria-label="Anterior">‹</button>
+          <select id="rSel" aria-label="Jornada"></select>
+          <button id="rNext" aria-label="Siguiente">›</button>
+        </div>
+        <span class="meta" id="rMeta"></span>
+      </div>
+      <div class="card__bd">
+        <div class="jgrid" id="rGrid"></div>
+        <div class="btns" style="margin-top:.9rem">
+          <button class="btn" id="bGuardar">Guardar la jornada</button>
+          <button class="btn btn--g" id="bTodoActa">Marcar todo como sellado</button>
+        </div>
+        <p class="msg" id="mRes" role="status"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__hd"><h3>Pegar resultados en texto</h3></div>
+      <div class="card__bd">
+        <div class="f">
+          <label for="pTexto">Una línea por partido</label>
+          <textarea id="pTexto" rows="5" spellcheck="false" placeholder="Vega Alta 2-1 Olivar C.F.&#10;Ribera del Sur 0-0 Puente Nuevo"></textarea>
+          <small>Entiende guiones, dos puntos y el formato de WhatsApp. Los nombres no tienen que ser exactos.</small>
+        </div>
+        <button class="btn btn--g" id="bParse">Leer el texto</button>
+        <p class="msg" id="mParse" role="status"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. COLA ============ -->
+  <section class="vista" id="v-cola">
+    <div class="head">
+      <h2>Peticiones por aprobar</h2>
+      <p>Nada de lo que llega de fuera entra en el portal hasta que lo apruebas aquí. Pega lo que te manden por WhatsApp o por correo y revísalo uno a uno.</p>
+    </div>
+
+    <div class="card">
+      <div class="card__hd"><h3>Entrada</h3></div>
+      <div class="card__bd">
+        <div class="f">
+          <label for="qTexto">Pega los mensajes recibidos</label>
+          <textarea id="qTexto" rows="5" spellcheck="false" placeholder="[21/9/26, 19:14] Curro Delegado: Vega Alta 2-1 Olivar&#10;Marisa: Dehesa 1-1 Cerro Alto"></textarea>
+          <small>Si el mensaje lleva nombre delante de los dos puntos, se guarda como autor de la petición.</small>
+        </div>
+        <button class="btn" id="bCola">Añadir a la cola</button>
+        <p class="msg" id="mCola" role="status"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__hd"><h3>Pendientes</h3><span class="meta" id="colaMeta">0</span></div>
+      <div class="card__bd"><div class="cola" id="colaLista"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 4. PUBLICAR ============ -->
+  <section class="vista" id="v-pub">
+    <div class="head">
+      <h2>Publicar</h2>
+      <p>Descarga el archivo y súbelo al repositorio. En cuanto GitHub lo despliegue, el portal lee de él en vez de los datos de muestra.</p>
+    </div>
+
+    <div class="aviso">
+      <p><strong>Este panel no publica solo.</strong> Genera un archivo que tú subes a GitHub. Por eso da igual que <code>panel.html</code> esté a la vista de cualquiera: quien lo abra podrá teclear lo que quiera en su navegador, pero no puede tocar tu web, porque publicar exige subir el archivo a tu repositorio con tu cuenta.</p>
+    </div>
+
+    <div class="card">
+      <div class="card__hd"><h3>Clasificación tal y como saldrá</h3><span class="meta" id="pubMeta"></span></div>
+      <div class="card__bd" style="overflow-x:auto"><table id="pubTabla"></table></div>
+    </div>
+
+    <div class="card">
+      <div class="card__hd"><h3>datos.json</h3><span class="meta" id="pesoJson"></span></div>
+      <div class="card__bd">
+        <div class="btns" style="margin-bottom:.8rem">
+          <button class="btn" id="bBajar">Descargar datos.json</button>
+          <button class="btn btn--g" id="bCopiar">Copiar al portapapeles</button>
+          <button class="btn btn--g" id="bCargar">Cargar un datos.json</button>
+          <input type="file" id="fJson" accept=".json,application/json" hidden>
+        </div>
+        <div class="f">
+          <label for="jsonOut">Contenido</label>
+          <textarea id="jsonOut" rows="10" spellcheck="false" readonly></textarea>
+        </div>
+        <p class="msg" id="mPub" role="status"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__hd"><h3>Cómo subirlo</h3></div>
+      <div class="card__bd" style="font-size:.87rem;color:var(--mute)">
+        <p style="margin-top:0">1. Descarga el archivo. 2. En tu repositorio, <b style="color:var(--bone)">Add file → Upload files</b>. 3. Arrastra <code>datos.json</code> a la raíz. 4. <b style="color:var(--bone)">Commit changes</b>. En un par de minutos está en línea.</p>
+        <p>Para que el portal lo lea, en <code>index.html</code> deja la función de carga así:</p>
+        <div class="crudo">async function cargarCompeticion(id){<br>&nbsp;&nbsp;const r = await fetch("datos.json", {cache:"no-store"});<br>&nbsp;&nbsp;if(!r.ok) return construir(CATALOGO.find(c=&gt;c.id===id));<br>&nbsp;&nbsp;return await r.json();<br>}</div>
+        <p style="margin-bottom:0">Si el archivo no existe todavía, sigue enseñando los datos de muestra en lugar de romperse.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ============================================================================
+   ESTADO
+   Todo vive en memoria. Se exporta a datos.json a mano, que es lo que se
+   publica. Si algún día quieres que el navegador lo recuerde entre visitas,
+   descomenta guardar() y recuperar() al final: funciona en tu dominio.
+   ============================================================================ */
+const $  = (s,c=document)=>c.querySelector(s);
+const $$ = (s,c=document)=>[...c.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let D = null;      /* competición cargada */
+let COLA = [];     /* peticiones pendientes */
+let JOR = 1;
+let sucio = false;
+
+function marcar(s=true){
+  sucio = s;
+  $("#estado").textContent = s ? "Cambios sin exportar" : "Sin cambios";
+  $("#pt").classList.toggle("ok", !s);
+}
+addEventListener("beforeunload", e=>{ if(sucio){ e.preventDefault(); e.returnValue=""; } });
+
+/* ---------- Calendario por el método del círculo ---------- */
+function rondas(n){
+  const ids=[...Array(n).keys()], ida=[];
+  for(let j=0;j<n-1;j++){
+    const pares=[];
+    for(let i=0;i<n/2;i++){
+      const a=ids[i], b=ids[n-1-i];
+      if(a!==undefined && b!==undefined) pares.push(j%2 ? [b,a] : [a,b]);
+    }
+    ida.push(pares);
+    ids.splice(1,0,ids.pop());
+  }
+  return [...ida, ...ida.map(j=>j.map(([a,b])=>[b,a]))];
+}
+
+function generar(){
+  const eqs = $("#cEquipos").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  const m = $("#mComp");
+  if(eqs.length < 4){ m.dataset.s="err"; m.textContent="Hacen falta al menos cuatro equipos."; return; }
+  if(new Set(eqs.map(e=>e.toLowerCase())).size !== eqs.length){ m.dataset.s="err"; m.textContent="Hay equipos repetidos en la lista."; return; }
+  if(!$("#cInicio").value){ m.dataset.s="err"; m.textContent="Pon la fecha de la primera jornada."; return; }
+
+  const impar = eqs.length % 2 !== 0;
+  const lista = impar ? [...eqs,"— descansa —"] : eqs;
+  const jor = rondas(lista.length);
+  const [hh,mm] = $("#cHora").value.split(":").map(Number);
+  const inicio = new Date($("#cInicio").value + "T00:00:00");
+  inicio.setHours(hh||17, mm||0, 0, 0);
+
+  const partidos = [];
+  jor.forEach((ronda,ri)=>{
+    ronda.forEach(([a,b])=>{
+      if(lista[a].startsWith("—") || lista[b].startsWith("—")) return;
+      partidos.push({
+        jornada: ri+1, local: lista[a], visitante: lista[b],
+        gl:null, gv:null, estado:"programado", autor:null, hace:null,
+        fecha: new Date(inicio.getTime() + ri*7*864e5).toISOString(),
+        campo: ""
+      });
+    });
+  });
+
+  D = {
+    id: "local-1",
+    competicion:{
+      provincia: $("#cProv").value.trim() || "Sevilla",
+      categoria: $("#cCat").value.trim() || "Tercera Andaluza",
+      grupo: $("#cGrp").value.trim() || "Grupo 1",
+      equipos: eqs.length,
+      asc: +$("#cAsc").value || 0, pro: +$("#cPro").value || 0, des: +$("#cDes").value || 0
+    },
+    jornada:1, jugadas:0, totalJornadas: jor.length,
+    actualizado: new Date().toISOString(),
+    partidos, resultados:[], proxima:[], goleadores:[]
+  };
+  JOR = 1;
+  m.dataset.s="ok";
+  m.textContent = `Calendario listo: ${eqs.length} equipos, ${jor.length} jornadas, ${partidos.length} partidos.${impar?" Número impar: cada jornada descansa uno.":""}`;
+  marcar();
+  refrescar();
+}
+
+$("#bGen").addEventListener("click", generar);
+
+function refrescar(){
+  if(!D) return;
+  /* resumen */
+  $("#cResumen").hidden = false;
+  const j = D.partidos.filter(p=>p.gl!==null).length;
+  $("#resumenMeta").textContent = `${D.competicion.categoria} · ${D.competicion.grupo}`;
+  $("#resumenKpis").innerHTML = `
+    <div class="kpi"><b class="num">${D.competicion.equipos}</b><small>Equipos</small></div>
+    <div class="kpi"><b class="num">${D.totalJornadas}</b><small>Jornadas</small></div>
+    <div class="kpi"><b class="num">${D.partidos.length}</b><small>Partidos</small></div>
+    <div class="kpi"><b class="num">${j}</b><small>Con resultado</small></div>`;
+  pintarJornada(); pintarCola(); pintarPublicar();
+}
+
+/* ---------- Carga de resultados ---------- */
+const ESTADOS = [
+  ["programado","Sin jugar"],
+  ["pendiente","Sin confirmar"],
+  ["confirmado","Confirmado por dos clubes"],
+  ["acta","Sellado con acta"],
+  ["discrepancia","En discrepancia"]
+];
+
+function pintarJornada(){
+  if(!D) return;
+  $("#rSel").innerHTML = Array.from({length:D.totalJornadas},(_,i)=>
+    `<option value="${i+1}" ${i+1===JOR?"selected":""}>Jornada ${i+1}</option>`).join("");
+  $("#rPrev").disabled = JOR<=1;
+  $("#rNext").disabled = JOR>=D.totalJornadas;
+
+  const ps = D.partidos.filter(p=>p.jornada===JOR);
+  $("#rMeta").textContent = `${ps.filter(p=>p.gl!==null).length} de ${ps.length} cargados`;
+  $("#rGrid").innerHTML = ps.map(p=>{
+    const i = D.partidos.indexOf(p);
+    return `<div class="jrow ${p.gl!==null?"hecho":""}">
+      <span class="r" title="${esc(p.local)}">${esc(p.local)}</span>
+      <input type="number" min="0" max="30" inputmode="numeric" data-i="${i}" data-c="gl" value="${p.gl??""}" aria-label="Goles de ${esc(p.local)}">
+      <span class="g">–</span>
+      <input type="number" min="0" max="30" inputmode="numeric" data-i="${i}" data-c="gv" value="${p.gv??""}" aria-label="Goles de ${esc(p.visitante)}">
+      <span title="${esc(p.visitante)}">${esc(p.visitante)}</span>
+      <select data-i="${i}" data-c="estado" aria-label="Estado del partido">
+        ${ESTADOS.map(([v,t])=>`<option value="${v}" ${p.estado===v?"selected":""}>${t}</option>`).join("")}
+      </select>
+    </div>`;
+  }).join("");
+}
+
+$("#rGrid").addEventListener("input", e=>{
+  const el = e.target, i = el.dataset.i;
+  if(i===undefined) return;
+  const p = D.partidos[+i];
+  if(el.dataset.c==="estado"){ p.estado = el.value; }
+  else {
+    const v = el.value==="" ? null : Math.max(0, Math.min(30, parseInt(el.value,10)));
+    p[el.dataset.c] = Number.isFinite(v) ? v : null;
+    if(p.gl!==null && p.gv!==null && p.estado==="programado"){
+      p.estado = "pendiente";
+      const s = $(`select[data-i="${i}"]`); if(s) s.value = "pendiente";
+    }
+  }
+  marcar();
+});
+
+$("#bGuardar").addEventListener("click",()=>{
+  const ps = D.partidos.filter(p=>p.jornada===JOR);
+  const medio = ps.filter(p=>(p.gl===null)!==(p.gv===null));
+  const m = $("#mRes");
+  if(medio.length){ m.dataset.s="err"; m.textContent=`${medio.length} partido(s) con un solo marcador puesto. Completa los dos o deja los dos en blanco.`; return; }
+  recalcular();
+  m.dataset.s="ok"; m.textContent=`Jornada ${JOR} guardada. La clasificación se ha recalculado.`;
+  refrescar();
+});
+$("#bTodoActa").addEventListener("click",()=>{
+  D.partidos.filter(p=>p.jornada===JOR && p.gl!==null).forEach(p=>p.estado="acta");
+  marcar(); pintarJornada();
+  $("#mRes").dataset.s="ok"; $("#mRes").textContent="Toda la jornada marcada como sellada con acta.";
+});
+$("#rPrev").addEventListener("click",()=>{ if(JOR>1){JOR--;pintarJornada();} });
+$("#rNext").addEventListener("click",()=>{ if(JOR<D.totalJornadas){JOR++;pintarJornada();} });
+$("#rSel").addEventListener("change",e=>{ JOR=+e.target.value; pintarJornada(); });
+
+function recalcular(){
+  /* La jornada en curso es la última de la secuencia que tiene partidos, no la
+     más alta con resultado: si alguien carga por error un partido de la jornada
+     30 en septiembre, el portal no debe saltar hasta allí. */
+  let ultima = 0;
+  for(let j=1;j<=D.totalJornadas;j++){
+    if(D.partidos.some(p=>p.jornada===j && p.gl!==null)) ultima = j; else break;
+  }
+  D.jugadas = ultima;
+  D.jornada = Math.min(ultima+1, D.totalJornadas);
+  D.resultados = D.partidos.filter(p=>p.jornada===ultima);
+  D.proxima = D.partidos.filter(p=>p.jornada===ultima+1);
+  D.actualizado = new Date().toISOString();
+}
+
+/* Avisa si un resultado cae en una jornada muy por delante de la que toca */
+function adelantado(p){
+  return p && p.jornada > D.jugadas + 1;
+}
+
+/* ---------- Lectura de texto ---------- */
+const norm = s => s.toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+  .replace(/\b(c\.?d\.?|c\.?f\.?|u\.?d\.?|a\.?d\.?|s\.?a\.?d\.?|f\.?c\.?|balompie|club|atletico|at\.)\b/g," ")
+  .replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+
+function parecido(a,b){
+  const x=norm(a), y=norm(b);
+  if(!x||!y) return 0;
+  if(x===y) return 1;
+  if(x.includes(y)||y.includes(x)) return .85;
+  const px=new Set(x.split(" ")), py=new Set(y.split(" "));
+  const comun=[...px].filter(w=>w.length>2 && py.has(w)).length;
+  return comun ? .5 + .1*comun : 0;
+}
+function buscarEquipo(nombre){
+  const eqs = [...new Set(D.partidos.flatMap(p=>[p.local,p.visitante]))];
+  let mejor=null, punt=0;
+  eqs.forEach(e=>{ const p=parecido(nombre,e); if(p>punt){punt=p;mejor=e;} });
+  return punt>=.5 ? mejor : null;
+}
+
+/* Acepta "A 2-1 B", "A 2 : 1 B", "[fecha] Autor: A 2-1 B", "Autor: A 2-1 B" */
+const LINEA = /^(?:\[[^\]]*\]\s*)?(?:([^:]{2,40}?)\s*:\s*)?(.+?)\s+(\d{1,2})\s*[-–—:x]\s*(\d{1,2})\s+(.+?)\s*$/i;
+
+function leer(texto){
+  const out=[];
+  texto.split("\n").map(s=>s.trim()).filter(Boolean).forEach(linea=>{
+    const m = linea.match(LINEA);
+    if(!m){ out.push({crudo:linea, error:"No se entiende el formato"}); return; }
+    const [,autor,l,gl,gv,v] = m;
+    const local=buscarEquipo(l), visitante=buscarEquipo(v);
+    if(!local || !visitante){
+      out.push({crudo:linea, error:`No reconozco ${!local?`"${l.trim()}"`:`"${v.trim()}"`}`});
+      return;
+    }
+    if(local===visitante){ out.push({crudo:linea, error:"Los dos nombres apuntan al mismo equipo"}); return; }
+    out.push({crudo:linea, autor:(autor||"").trim()||null, local, visitante, gl:+gl, gv:+gv});
+  });
+  return out;
+}
+
+/* Busca el partido del calendario: prioriza el que aún no tiene resultado */
+function localizar(local, visitante){
+  const cand = D.partidos.filter(p=>p.local===local && p.visitante===visitante);
+  return cand.find(p=>p.gl===null) || cand[0] || null;
+}
+
+$("#bParse").addEventListener("click",()=>{
+  const m=$("#mParse");
+  if(!D){ m.dataset.s="err"; m.textContent="Primero genera el calendario."; return; }
+  const items = leer($("#pTexto").value);
+  if(!items.length){ m.dataset.s="err"; m.textContent="No hay nada que leer."; return; }
+  let ok=0; const fallos=[];
+  items.forEach(it=>{
+    if(it.error){ fallos.push(`${it.crudo} → ${it.error}`); return; }
+    const p = localizar(it.local, it.visitante);
+    if(!p){ fallos.push(`${it.local} vs ${it.visitante} → no está en el calendario`); return; }
+    if(adelantado(p)) fallos.push(`${it.local} vs ${it.visitante} → ese cruce es de la jornada ${p.jornada}, revísalo`);
+    p.gl=it.gl; p.gv=it.gv;
+    if(p.estado==="programado") p.estado="pendiente";
+    if(it.autor) p.autor=it.autor;
+    ok++;
+  });
+  recalcular(); marcar(); refrescar();
+  m.dataset.s = fallos.length ? "err" : "ok";
+  m.textContent = `${ok} resultado(s) cargados.` + (fallos.length?` No he podido con: ${fallos.join(" · ")}`:"");
+  if(ok) $("#pTexto").value="";
+});
+
+/* ---------- Cola de moderación ---------- */
+$("#bCola").addEventListener("click",()=>{
+  const m=$("#mCola");
+  if(!D){ m.dataset.s="err"; m.textContent="Primero genera el calendario."; return; }
+  const items = leer($("#qTexto").value);
+  if(!items.length){ m.dataset.s="err"; m.textContent="No hay mensajes que leer."; return; }
+  items.forEach(it=>{
+    const p = it.error ? null : localizar(it.local,it.visitante);
+    COLA.push({
+      id: "q"+Date.now()+Math.random().toString(36).slice(2,6),
+      recibido: new Date().toISOString(),
+      ...it,
+      jornada: p?p.jornada:null,
+      lejos: adelantado(p),
+      choca: p && p.gl!==null && (p.gl!==it.gl || p.gv!==it.gv) ? `${p.gl}-${p.gv}` : null,
+      yaIgual: p && p.gl===it.gl && p.gv===it.gv
+    });
+  });
+  $("#qTexto").value="";
+  m.dataset.s="ok"; m.textContent=`${items.length} petición(es) en la cola. Ninguna se publica hasta que la apruebes.`;
+  pintarCola();
+});
+
+function pintarCola(){
+  $("#colaMeta").textContent = `${COLA.length} pendiente(s)`;
+  $("#badge").hidden = COLA.length===0;
+  $("#badge").textContent = COLA.length;
+  if(!COLA.length){
+    $("#colaLista").innerHTML = `<div class="vacio"><b>Nada por revisar</b><p>Cuando pegues mensajes recibidos aparecerán aquí para que los apruebes o los descartes.</p></div>`;
+    return;
+  }
+  $("#colaLista").innerHTML = COLA.map(q=>{
+    if(q.error) return `<div class="item"><div class="item__t"><span class="tag tag--d">No se entiende</span></div>
+      <div class="crudo">${esc(q.crudo)}</div>
+      <div class="item__m">${esc(q.error)}</div>
+      <div class="btns"><button class="btn btn--d btn--s" data-q="${q.id}" data-a="no">Descartar</button></div></div>`;
+    const etiqueta = q.choca ? `<span class="tag tag--d">Choca con ${q.choca}</span>`
+      : q.yaIgual ? `<span class="tag tag--x">Ya estaba igual</span>`
+      : `<span class="tag tag--n">Nuevo</span>`;
+    const lejos = q.lejos ? `<span class="tag tag--d">Jornada adelantada</span>` : "";
+    return `<div class="item ${q.choca?"dup":q.yaIgual?"":"nuevo"}">
+      <div class="item__t">
+        <b>${esc(q.local)}</b><span class="sc">${q.gl} – ${q.gv}</span><b>${esc(q.visitante)}</b>
+        ${etiqueta}${lejos}
+      </div>
+      <div class="item__m">Jornada ${q.jornada??"?"} · lo envía <b>${esc(q.autor||"anónimo")}</b> · ${new Date(q.recibido).toLocaleString("es-ES")}</div>
+      <div class="crudo">${esc(q.crudo)}</div>
+      <div class="btns">
+        <button class="btn btn--s" data-q="${q.id}" data-a="si">${q.choca?"Aprobar y sobrescribir":"Aprobar"}</button>
+        <button class="btn btn--d btn--s" data-q="${q.id}" data-a="no">Descartar</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+$("#colaLista").addEventListener("click",e=>{
+  const b=e.target.closest("[data-q]"); if(!b) return;
+  const q = COLA.find(x=>x.id===b.dataset.q); if(!q) return;
+  if(b.dataset.a==="si"){
+    const p = localizar(q.local,q.visitante);
+    if(p){
+      p.gl=q.gl; p.gv=q.gv;
+      p.estado = q.choca ? "discrepancia" : "confirmado";
+      p.autor = q.autor || "colaborador";
+      p.hace = 0;
+      recalcular(); marcar();
+    }
+  }
+  COLA = COLA.filter(x=>x.id!==q.id);
+  pintarCola(); pintarJornada(); pintarPublicar();
+});
+
+/* ---------- Clasificación y exportación ---------- */
+function clasificar(){
+  const t={};
+  const toca = n => t[n] || (t[n]={nombre:n,pg:0,pe:0,pp:0,gf:0,gc:0,hist:[]});
+  D.partidos.forEach(p=>{ toca(p.local); toca(p.visitante); });
+  D.partidos.filter(p=>p.gl!==null).forEach(p=>{
+    const L=t[p.local], V=t[p.visitante];
+    const r = p.gl>p.gv ? "V" : p.gl===p.gv ? "E" : "D";
+    L.hist.push(r); V.hist.push(r==="V"?"D":r==="D"?"V":"E");
+    L.gf+=p.gl; L.gc+=p.gv; V.gf+=p.gv; V.gc+=p.gl;
+    r==="V"?L.pg++:r==="E"?L.pe++:L.pp++;
+    r==="D"?V.pg++:r==="E"?V.pe++:V.pp++;
+  });
+  return Object.values(t).map(f=>({...f,pj:f.pg+f.pe+f.pp,pt:f.pg*3+f.pe,dg:f.gf-f.gc,racha:f.hist.slice(-5).join("")}))
+    .sort((a,b)=>b.pt-a.pt||b.dg-a.dg||b.gf-a.gf||a.nombre.localeCompare(b.nombre,"es"));
+}
+
+function pintarPublicar(){
+  if(!D) return;
+  const rows = clasificar(), n=rows.length, c=D.competicion;
+  $("#pubMeta").textContent = `tras la jornada ${D.jugadas}`;
+  $("#pubTabla").innerHTML = `<thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PT</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Racha</th></tr></thead><tbody>
+    ${rows.map((f,i)=>{
+      const p=i+1;
+      const col = p<=c.asc?"var(--neon)":p<=c.pro?"var(--albero)":p>n-c.des?"var(--loss)":"var(--mute)";
+      return `<tr><td style="color:${col};font-weight:600">${p}</td><td class="eq">${esc(f.nombre)}</td>
+        <td style="color:var(--bone)">${f.pt}</td><td>${f.pj}</td><td>${f.pg}</td><td>${f.pe}</td><td>${f.pp}</td>
+        <td>${f.gf}</td><td>${f.gc}</td><td>${f.dg>0?"+":""}${f.dg}</td><td>${f.racha||"—"}</td></tr>`;
+    }).join("")}</tbody>`;
+
+  const json = JSON.stringify(D,null,1);
+  $("#jsonOut").value = json;
+  $("#pesoJson").textContent = (new Blob([json]).size/1024).toFixed(1)+" KB";
+}
+
+$("#bBajar").addEventListener("click",()=>{
+  const blob = new Blob([JSON.stringify(D,null,1)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="datos.json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  marcar(false);
+  $("#mPub").dataset.s="ok"; $("#mPub").textContent="Descargado. Ya puedes subirlo al repositorio.";
+});
+$("#bCopiar").addEventListener("click",async()=>{
+  try{ await navigator.clipboard.writeText($("#jsonOut").value);
+    $("#mPub").dataset.s="ok"; $("#mPub").textContent="Copiado."; marcar(false);
+  }catch(e){ $("#mPub").dataset.s="err"; $("#mPub").textContent="El navegador no ha dejado copiar. Descárgalo."; }
+});
+$("#bCargar").addEventListener("click",()=>$("#fJson").click());
+$("#fJson").addEventListener("change",async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    if(!d.partidos || !Array.isArray(d.partidos)) throw new Error("sin partidos");
+    D=d; JOR=Math.max(1,d.jugadas||1);
+    $("#cProv").value=d.competicion.provincia; $("#cCat").value=d.competicion.categoria;
+    $("#cGrp").value=d.competicion.grupo;
+    $("#cAsc").value=d.competicion.asc; $("#cPro").value=d.competicion.pro; $("#cDes").value=d.competicion.des;
+    $("#cEquipos").value=[...new Set(d.partidos.map(p=>p.local))].join("\n");
+    marcar(false); refrescar();
+    $("#mPub").dataset.s="ok"; $("#mPub").textContent=`Cargado: ${d.partidos.length} partidos.`;
+  }catch(err){
+    $("#mPub").dataset.s="err"; $("#mPub").textContent="Ese archivo no es un datos.json válido.";
+  }
+  e.target.value="";
+});
+
+/* ---------- Pestañas ---------- */
+$$(".nav button").forEach(b=>b.addEventListener("click",()=>{
+  $$(".nav button").forEach(x=>x.setAttribute("aria-selected","false"));
+  b.setAttribute("aria-selected","true");
+  $$(".vista").forEach(v=>v.classList.remove("on"));
+  $("#v-"+b.dataset.v).classList.add("on");
+  if(b.dataset.v==="pub") pintarPublicar();
+}));
+
+/* ---------- Ejemplo para probar sin escribir nada ---------- */
+$("#bDemo").addEventListener("click",()=>{
+  $("#cEquipos").value = ["Vega Alta","Olivar C.F.","Ribera del Sur","Los Alcores C.D.","Atlético Marisma","Puente Nuevo","Cerro Alto","Molino Viejo","Dehesa C.F.","Naranjos C.D.","Torre Blanca","Guadaíra F.C.","Trianilla C.D.","Corta Baja","Pinares Unión","Estrella Sur"].join("\n");
+  $("#cInicio").value = "2026-09-06";
+  $("#mComp").dataset.s=""; $("#mComp").textContent="Ejemplo cargado. Dale a generar calendario.";
+});
+
+/* Primera jornada por defecto: el domingo que viene */
+(function(){
+  const d=new Date(); d.setDate(d.getDate() + ((7-d.getDay())%7 || 7));
+  $("#cInicio").value = d.toISOString().slice(0,10);
+  pintarCola();
+})();
+
+/* Para recordar entre visitas en tu propio dominio, descomenta esto:
+function guardar(){ try{ localStorage.setItem("albero", JSON.stringify({D,COLA})); }catch(e){} }
+function recuperar(){ try{ const x=JSON.parse(localStorage.getItem("albero")||"null"); if(x){D=x.D;COLA=x.COLA||[];refrescar();} }catch(e){} }
+recuperar();
+*/
+</script>
+</body>
+</html>
